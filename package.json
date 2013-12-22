@@ -1,0 +1,29 @@
+{
+  "name": "client",
+  "version": "0.0.0",
+  "main": "lib/client.js",
+  "description": "",
+  "homepage": "",
+  "bugs": "",
+  "author": {
+    "name": "",
+    "email": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "licenses": [
+    {
+      "type": ""
+    }
+  ],
+  "devDependencies": {
+    "grunt-contrib-jshint": "~0.7.0",
+    "grunt-contrib-nodeunit": "~0.2.0",
+    "grunt-contrib-watch": "~0.5.0",
+    "load-grunt-tasks": "~0.2.0",
+    "time-grunt": "~0.2.0",
+    "jshint-stylish": "~0.1.3"
+  }
+}
