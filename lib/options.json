@@ -1,3 +1,6 @@
 {
-  "server": "http://localhost:8000"
+  "server": "http://localhost",
+  "port": "9009",
+  "sourceFolder": "/Users/phoerix/code/ayecm/test/source/",
+  "destFolder": "/Users/phoerix/code/ayecm/test/dest/"
 }
