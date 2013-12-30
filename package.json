@@ -31,7 +31,9 @@
     "git": "~0.1.5",
     "stompit": "~0.14.0",
     "nodegit": "~0.1.0",
-    "gift": "~0.1.1"
+    "gift": "~0.1.1",
+    "winston": "~0.7.2",
+    "async": "~0.2.9"
   },
   "bin": {
     "forever": "./bin/forever"

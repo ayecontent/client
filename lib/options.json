@@ -8,7 +8,9 @@
   "gitUrl": "https://github.com/yottagroup/ayecms-test-2.git",
   "gitCommitterName": "executor",
   "gitCommitterEmail": "executor@ayecm.com",
+  "excludedRsyncFiles": [".git*",".stop-content-delivery",".stop-periodic-sync",".start-content-delivery"],
   "stopContentDeliveryFile": ".stop-content-delivery",
+  "stopPeriodicRsyncFile": ".stop-periodic-sync",
   "startContentDeliveryFile": ".start-content-delivery",
   "allowRemoteRsync": "false"
 }
