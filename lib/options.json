@@ -1,6 +1,7 @@
 {
   "server": "127.0.0.1",
-  "port": "9010",
+  "port": "9005",
+  "clientId": "777",
   "sourceFolder": "/Users/phoerix/code/ayecm/test/source/",
   "destFolder": "/Users/phoerix/code/ayecm/test/dest/",
   "gitUser": "Jesse-James",
@@ -8,7 +9,7 @@
   "gitUrl": "https://github.com/yottagroup/ayecms-test-2.git",
   "gitCommitterName": "executor",
   "gitCommitterEmail": "executor@ayecm.com",
-  "excludedRsyncFiles": [".git*",".stop-content-delivery",".stop-periodic-sync",".start-content-delivery"],
+  "excludedRsyncFiles": [".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery"],
   "stopContentDeliveryFile": ".stop-content-delivery",
   "stopPeriodicRsyncFile": ".stop-periodic-sync",
   "startContentDeliveryFile": ".start-content-delivery",
