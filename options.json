@@ -1,17 +1,16 @@
 {
-  "server": "localhost",
+  "server": "172.31.1.1",
   "port": "9005",
   "clientId": "demo.dotcms.com",
-  "sourceFolder": "/Users/phoerix/code/ayecm/test2/source/",
-  "destFolder": "/Users/phoerix/code/ayecm/test2/dest/",
-  "gitUser": "Jesse-James",
-  "gitPassword": "qwe123QWE",
-  "gitUrl": "git@github.com:yottagroup/ayecms-test-2.git",
+  "sourceFolder": "/home/ec2-user/client/work/",
+  "destFolder": "/var/opt/client/",
+  "gitUser": "ayecmsys",
+  "gitPassword": "ayecm123",
+  "gitUrl": "https://github.com/yottagroup/ayecms-test-2.git",
   "gitCommitterName": "executor",
   "gitCommitterEmail": "executor@ayecm.com",
   "stopContentDeliveryFile": ".stop-content-delivery",
   "stopPeriodicRsyncFile": ".stop-periodic-sync",
   "startContentDeliveryFile": ".start-content-delivery",
-  "allowRemoteRsync": "false",
-  "profiling": false
+  "allowRemoteRsync": "false"
 }
