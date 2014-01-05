@@ -6,7 +6,7 @@
   "destFolder": "/Users/phoerix/code/ayecm/test/dest/",
   "gitUser": "Jesse-James",
   "gitPassword": "qwe123QWE",
-  "gitUrl": "https://github.com/nodegit/nodegit.git",
+  "gitUrl": "git@bitbucket.org:ayecm/app.git",
   "gitCommitterName": "executor",
   "gitCommitterEmail": "executor@ayecm.com",
   "excludedRsyncFiles": [".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery"],
