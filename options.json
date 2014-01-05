@@ -6,7 +6,7 @@
   "destFolder": "/var/opt/client/",
   "gitUser": "ayecmsys",
   "gitPassword": "ayecm123",
-  "gitUrl": "https://github.com/yottagroup/ayecms-test-2.git",
+  "gitUrl": "git@github.com:yottagroup/ayecms-test-2.git",
   "gitCommitterName": "executor",
   "gitCommitterEmail": "executor@ayecm.com",
   "stopContentDeliveryFile": ".stop-content-delivery",
