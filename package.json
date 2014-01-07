@@ -29,9 +29,6 @@
   },
   "dependencies": {
     "rsync": "~0.1.0",
-    "git": "~0.1.5",
-    "nodegit": "~0.1.0",
-    "gift": "~0.1.1",
     "winston": "~0.7.2",
     "async": "~0.2.9",
     "forever-monitor": "~1.2.3",
