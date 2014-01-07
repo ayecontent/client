@@ -1,4 +1,12 @@
+var logger = require('./lib/log');
+
+logger.info('----------------------');
+logger.info('START');
+logger.info('----------------------');
+
 module.exports = require("./lib/client.js");
+
+
 
 //var forever = require('forever-monitor');
 //
