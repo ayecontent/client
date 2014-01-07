@@ -34,7 +34,8 @@
     "gift": "~0.1.1",
     "winston": "~0.7.2",
     "async": "~0.2.9",
-    "forever-monitor": "~1.2.3"
+    "forever-monitor": "~1.2.3",
+    "stack-trace": "0.0.7"
   },
   "bin": {
     "forever": "./bin/forever"
