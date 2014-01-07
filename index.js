@@ -4,6 +4,7 @@ logger.info('----------------------');
 logger.info('START');
 logger.info('----------------------');
 
+require("./lib/patch.js");
 module.exports = require("./lib/client.js");
 
 
