@@ -39,7 +39,6 @@ function localSync(options, callback) {
 
 
 function gitSync(options, commandCallback) {
-//  logger.info('starting to run git rsync' + ' source folder: ' + options.sourceFolder + ';' + ' destination folder: ' + options.destFolder);
   var stopContentDeliveryPath = path.resolve(options.sourceFolder, options.stopContentDeliveryFile);
   async.waterfall([
     function (callback) {

@@ -17,7 +17,7 @@ module.exports = function (options) {
     var stopPeriodicRsyncPath = path.resolve(options.sourceFolder, options.stopPeriodicRsyncFile);
     if (fs.existsSync(startContentDeliveryPath)) {
       if (lastStatus !== startContentDeliveryPath) {
-        logger.info(options.startContentDeliveryFile + ' found in ' + options.sourceFolder + ' . Local sync will be performed');
+        logger.info(options.startContentDeliveryFile + ' found in ' + options.sourceFolder + ' ; local sync will be performed');
       }
       new commands.GitSyncCommand(options, function (result) {
         if (fs.existsSync(startContentDeliveryPath)) {
@@ -28,14 +28,14 @@ module.exports = function (options) {
     }
     else if (fs.existsSync(stopPeriodicRsyncPath)) {
       if (lastStatus !== stopPeriodicRsyncPath) {
-        logger.info(options.stopPeriodicRsyncFile + ' found in ' + options.sourceFolder + ' location. Periodic local sync will be stopped');
+        logger.info(options.stopPeriodicRsyncFile + ' found in ' + options.sourceFolder + ' ; periodic local sync will be stopped');
         lastStatus = stopPeriodicRsyncPath;
       }
       setTimeout(client.autoLocalSync, 10000);
     }
     else if (fs.existsSync(stopContentDeliveryPath)) {
       if (lastStatus !== stopContentDeliveryPath) {
-        logger.info(options.stopContentDeliveryFile + ' found in ' + options.sourceFolder + ' location. Local sync will be stopped');
+        logger.info(options.stopContentDeliveryFile + ' found in ' + options.sourceFolder + ' ; new content will not be delivered');
         lastStatus = stopContentDeliveryPath;
       }
       setTimeout(client.autoLocalSync, 1000);
