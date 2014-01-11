@@ -1,8 +1,4 @@
 'use strict';
-var http = require("http");
-var _ = require('lodash');
-var sys = require('util');
-var async = require('async');
 var logger = require('../lib/log');
 var io = require('socket.io-client');
 process.env.NODE_ENV !== 'production' && require('longjohn');

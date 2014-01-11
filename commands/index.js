@@ -15,6 +15,7 @@ var rsync = new Rsync()
   .set('delete')
   .exclude([".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery"]);
 
+
 function localSync(options, callback) {
   fs.mkdirsSync(options.sourceFolder);
   fs.mkdirsSync(options.destFolder);
@@ -39,8 +40,12 @@ function localSync(options, callback) {
 
 function gitSync(options, commandCallback) {
 //  logger.info('starting to run git rsync' + ' source folder: ' + options.sourceFolder + ';' + ' destination folder: ' + options.destFolder);
+  var stopContentDeliveryPath = path.resolve(options.sourceFolder, options.stopContentDeliveryFile);
   async.waterfall([
     function (callback) {
+      if (fs.existsSync(stopContentDeliveryPath)) {
+        return callback(null, 'success');
+      }
       fs.mkdirsSync(options.sourceFolder);
       options.profiling && winston.profile('Git-Status-Profile-Test');
       exec('git --git-dir=' + path.resolve(options.sourceFolder, '.git') + ' --work-tree=' + options.sourceFolder + ' status', function (error, stdout, stderr) {
@@ -48,7 +53,7 @@ function gitSync(options, commandCallback) {
         stderr && logger.error('checked git repository status; error output: ' + stderr);
         options.profiling && winston.profile('Git-Status-Profile-Test');
         if (!stderr) {
-          callback(null, "success");
+          return callback(null, "success");
         } else {
           fs.removeSync(options.sourceFolder);
           fs.mkdirsSync(options.sourceFolder);
@@ -57,29 +62,27 @@ function gitSync(options, commandCallback) {
           exec('git clone ' + options.gitUrl + ' ' + options.sourceFolder, function (error, stdout, stderr) {
             stdout && logger.info('tried to clone git repository; result output: ' + stdout);
             if (stderr) {
-              callback(new Error(stderr));
+              return callback(new Error(stderr));
             } else {
               options.profiling && winston.profile('Git-Clone-Profile-Test');
-              callback(null, "success");
+              return callback(null, "success");
             }
           });
         }
       });
     },
     function (result, callback) {
+      if (fs.existsSync(stopContentDeliveryPath)) {
+        return callback(null, 'success');
+      }
       options.profiling && winston.profile('Git-Pool-Profile-Test');
-      fs.openSync(path.resolve(options.sourceFolder, options.stopContentDeliveryFile), 'w');
       exec('git --git-dir=' + path.resolve(options.sourceFolder, '.git') + ' --work-tree=' + options.sourceFolder + ' pull', function (error, stdout, stderr) {
         stdout && logger.info('tried to pull git repository; result output: ' + stdout);
-        var stopContentDeliveryPath = path.resolve(options.sourceFolder, options.stopContentDeliveryFile);
-        if (fs.existsSync(stopContentDeliveryPath)) {
-          fs.unlinkSync(stopContentDeliveryPath);
-        }
         if (!stderr) {
           options.profiling && winston.profile('Git-Pool-Profile-Test');
-          callback(null, 'success');
+          return callback(null, 'success');
         } else {
-          callback(new Error(stderr));
+          return callback(new Error(stderr));
         }
       });
     }
