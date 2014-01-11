@@ -1,10 +1,14 @@
 {
   "name": "client",
-  "version": "0.0.0",
-  "main": "./lib/forever",
+  "version": "0.0.1",
+  "main": "app.js",
   "description": "",
   "homepage": "",
   "bugs": "",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
   "author": {
     "name": "",
     "email": ""
@@ -32,7 +36,11 @@
     "winston": "~0.7.2",
     "async": "~0.2.9",
     "forever-monitor": "~1.2.3",
-    "stack-trace": "0.0.7"
+    "stack-trace": "0.0.7",
+    "socket.io": "~0.9.16",
+    "lodash": "~2.4.1",
+    "socket.io-client": "~0.9.16",
+    "fs-extra": "~0.8.1"
   },
   "bin": {
     "forever": "./bin/forever"

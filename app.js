@@ -1,13 +1,26 @@
+//Logging on start
 var logger = require('./lib/log');
 
 logger.info('----------------------');
 logger.info('START');
 logger.info('----------------------');
 
-require("./lib/patch.js");
-module.exports = require("./lib/client.js");
+//Apply patch of modules
+require("./patch");
 
+var options = require("./options");
 
+//Run client's code
+var client = require("./client")(options);
+
+client.autoLocalSync();
+
+var commands = require('./commands');
+
+new commands.GitSyncCommand(options, function (result) {
+}).execute();
+
+//Forever monitor option for running
 
 //var forever = require('forever-monitor');
 //
