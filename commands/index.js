@@ -56,7 +56,7 @@ function gitSync(options, commandCallback) {
         } else {
           fs.removeSync(options.sourceFolder);
           fs.mkdirsSync(options.sourceFolder);
-          stdout && logger.info('start to clone git repository; it may take some time');
+          logger.info('start to clone git repository; it may take some time');
           options.profiling && winston.profile('Git-Clone-Profile-Test');
           exec('git clone ' + options.gitUrl + ' ' + options.sourceFolder, function (error, stdout, stderr) {
             stdout && logger.info('tried to clone git repository; result output: ' + stdout);
