@@ -16,8 +16,6 @@ var options = require('./options');
 //Run client's code
 var client = require('./client')(options);
 
-client.autoLocalSync();
-
 var commands = require('./commands');
 
 new commands.GitSyncCommand(options, function (result) {
