@@ -9,12 +9,12 @@ logger.info('----------------------');
 process.env.NODE_ENV !== 'production' && require('longjohn');
 
 //Apply patch of modules
-require("./patch");
+require('./patch');
 
-var options = require("./options");
+var options = require('./options');
 
 //Run client's code
-var client = require("./client")(options);
+var client = require('./client')(options);
 
 client.autoLocalSync();
 
