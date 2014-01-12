@@ -1,7 +1,7 @@
 'use strict';
 var logger = require('../lib/log');
 var io = require('socket.io-client');
-process.env.NODE_ENV !== 'production' && require('longjohn');
+var commands = require('../commands');
 
 module.exports = function (options) {
 
@@ -39,7 +39,7 @@ module.exports = function (options) {
     })
     .on('disconnect', function () {
       //TODO: change logging level to warn when implemented
-      logger.info('client lost connection from eventhub socket; clientId: ' + options.clientId + '; eventhub ip address: ' + options.server);
+      logger.info('client disconnected from eventhub socket; clientId: ' + options.clientId + '; eventhub ip address: ' + options.server);
       !socket.socket.options.reconnect && reconnect();
     })
 

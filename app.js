@@ -5,6 +5,9 @@ logger.info('----------------------');
 logger.info('START');
 logger.info('----------------------');
 
+//Longjohn for long stack traces
+process.env.NODE_ENV !== 'production' && require('longjohn');
+
 //Apply patch of modules
 require("./patch");
 

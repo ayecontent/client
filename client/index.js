@@ -3,7 +3,6 @@ var fs = require('fs');
 var path = require('path');
 var commands = require('../commands');
 var logger = require('../lib/log');
-process.env.NODE_ENV !== 'production' && require('longjohn');
 
 module.exports = function (options) {
 
