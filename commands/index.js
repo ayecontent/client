@@ -98,17 +98,8 @@ function gitSync(options, commandCallback) {
   );
 }
 
-exports.commands = {
-  localSync: function (options, callback) {
-    return localSync(options, callback);
-  },
-  gitSync: function (options, callback) {
-    return gitSync(options, callback);
-  }
-};
-
-var Command = function (command, options, callback) {
-  this.command = command;
+var Command = function (func, options, callback) {
+  this.func = func;
   this.options = options;
   this.callback = callback;
 }
@@ -117,15 +108,14 @@ Command.prototype.execute = function () {
   executionQueue.push(this);
 }
 
-exports.GitSyncCommand = _.partial(Command, 'gitSync');
+exports.GitSyncCommand = _.partial(Command, gitSync);
 util.inherits(exports.GitSyncCommand, Command);
 
-exports.LocalSyncCommand = _.partial(Command, 'localSync');
+exports.LocalSyncCommand = _.partial(Command, localSync);
 util.inherits(exports.LocalSyncCommand, Command);
 
-
 var executionQueue = async.queue(function (command, callback) {
-  exports.commands[command.command](command.options, function (result) {
+  command.func(command.options, function (result) {
     callback(result); // internal callback
     return command.callback(result); // external callback
   });
