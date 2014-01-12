@@ -1,6 +1,6 @@
 'use strict';
 
-var client = require('../lib/client.js');
+//var client = require('../lib/client.js');
 
 /*
   ======== A Handy Little Nodeunit Reference ========
