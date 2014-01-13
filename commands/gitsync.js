@@ -56,21 +56,22 @@ exports.gitSync = function (options, commandCallback) {
         });
     }
 
-    async.waterfall([
-        function (callback) {
-            if (fs.existsSync(stopContentDeliveryPath)) {
-                return callback(null, 'success');
+    async.waterfall(
+        [
+            function (callback) {
+                if (fs.existsSync(stopContentDeliveryPath)) {
+                    return callback(null, 'success');
+                }
+                fs.mkdirsSync(options.sourceFolder);
+                checkRepositoryStatus(callback);
+            },
+            function (result, callback) {
+                if (fs.existsSync(stopContentDeliveryPath)) {
+                    return callback(null, 'success');
+                }
+                pullRepository(callback);
             }
-            fs.mkdirsSync(options.sourceFolder);
-            checkRepositoryStatus(callback);
-        },
-        function (result, callback) {
-            if (fs.existsSync(stopContentDeliveryPath)) {
-                return callback(null, 'success');
-            }
-            pullRepository(callback);
-        }
-    ],
+        ],
         function (err, result) {
             if (err) {
                 logger.error(err.message);
