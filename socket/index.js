@@ -9,7 +9,7 @@ module.exports = function (options) {
     var socket;
 
     function reconnect(delay) {
-        delay = delay || 200;
+        delay = delay || 1000;
         delay = delay < 10000 ? delay : 10000;
         socket.once('error', function () {
             logger.error('socket connection error. trying to reconnect; clientId: ' + options.clientId + '; eventhub ip address: ' + options.server);
@@ -27,7 +27,7 @@ module.exports = function (options) {
 
         socket.once('error', function () {
             logger.error('socket connection error. trying to reconnect; clientId: ' + options.clientId + '; eventhub ip address: ' + options.server);
-            reconnect();
+            socket.disconnect();
         });
 
         socket
@@ -39,7 +39,7 @@ module.exports = function (options) {
             })
             .on('connect', function () {
                 logger.info('client has connected to eventhub socket; clientId: ' + options.clientId + '; eventhub ip address: ' + options.server);
-                socket.emit('login', { clientId: options.clientId });
+                socket.emit('login', options.clientId);
             })
             .on('disconnect', function () {
                 //TODO: change logging level to warn when implemented
@@ -48,5 +48,6 @@ module.exports = function (options) {
             });
 
     }
+
     return {'start': init};
 };

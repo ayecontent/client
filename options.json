@@ -1,7 +1,7 @@
 {
   "server": "localhost",
   "port": "9005",
-  "clientId": "ayecm.com",
+  "clientId": "demo.dotcms.com",
   "sourceFolder": "/Users/phoerix/code/ayecm/test2/source/",
   "destFolder": "/Users/phoerix/code/ayecm/test2/dest/",
   "gitUser": "Jesse-James",
@@ -13,5 +13,5 @@
   "stopPeriodicRsyncFile": ".stop-periodic-sync",
   "startContentDeliveryFile": ".start-content-delivery",
   "allowRemoteRsync": "false",
-  "profiling": true
+  "profiling": false
 }
