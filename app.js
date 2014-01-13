@@ -16,11 +16,6 @@ var options = require('./options');
 //Run client's code
 var client = require('./client')(options);
 
-var commands = require('./commands');
-
-new commands.GitSyncCommand(options, function (result) {
-}).execute();
-
 //Forever monitor option for running
 
 //var forever = require('forever-monitor');
