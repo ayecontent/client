@@ -19,10 +19,10 @@ exports.gitSync = function (options, commandCallback) {
         exec('git clone ' + options.gitUrl + ' ' + options.sourceFolder, function (error, stdout, stderr) {
             stdout && logger.info('tried to clone git repository; result output: ' + stdout);
             if (stderr) {
-                return callback(new Error(stderr));
+                callback(new Error(stderr));
             } else {
                 options.profiling && winston.profile('Git-Clone-Profile-Test');
-                return callback(null, 'success');
+                callback(null, 'success');
             }
         });
     }
@@ -34,7 +34,7 @@ exports.gitSync = function (options, commandCallback) {
             stderr && logger.error('checked git repository status; error output: ' + stderr);
             options.profiling && winston.profile('Git-Status-Profile-Test');
             if (!stderr) {
-                return callback(null, 'success');
+                callback(null, 'success');
             } else {
                 fs.removeSync(options.sourceFolder);
                 fs.mkdirsSync(options.sourceFolder);
@@ -49,9 +49,9 @@ exports.gitSync = function (options, commandCallback) {
             stdout && logger.info('tried to pull git repository; result output: ' + stdout);
             if (!stderr) {
                 options.profiling && winston.profile('Git-Pool-Profile-Test');
-                return callback(null, 'success');
+                callback(null, 'success');
             } else {
-                return callback(new Error(stderr));
+                callback(new Error(stderr));
             }
         });
     }
@@ -75,7 +75,7 @@ exports.gitSync = function (options, commandCallback) {
         function (err, result) {
             if (err) {
                 logger.error(err.message);
-                commandCallback && commandCallback(err.message);
+                commandCallback(err.message);
             }
             else {
                 localSync(options, commandCallback);

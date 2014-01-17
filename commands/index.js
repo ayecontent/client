@@ -8,7 +8,7 @@ var util = require('util');
 var executionQueue = async.queue(function (command, callback) {
     command.func(command.options, function (result) {
         callback(result); // internal queue's callback for async
-        return command.callback(result); // external callback
+        command.callback(result); // external callback
     });
 });
 

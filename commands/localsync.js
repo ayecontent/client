@@ -22,7 +22,7 @@ exports.localSync = function localSync(options, callback) {
     options.profiling && winston.profile('Rsync-Profile-Test');
     rsync.execute(
         function (error, code, cmd) {
-            logger.info('tried to do local rsync; result: ' + code);
+            logger.info('tried to do local rsync; result: ' + (code === 0 ? 'success' : 'code '+ code));
             error && logger.info('tried to do local rsync; result output: ' + code + '; error result: ' + error);
             options.profiling && winston.profile('Rsync-Profile-Test');
             callback('success');

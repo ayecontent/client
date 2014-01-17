@@ -34,7 +34,8 @@ module.exports = function (options) {
             .on('command', function (command, cb) {
                 logger.info('client received socket command from eventhub; clientId: ' + options.clientId + '; command: ' + command);
                 new commands[command + 'Command'](options, function (result) {
-                    cb && cb(result);
+                    logger.info('command was executed; clientId: ' + options.clientId + '; command: ' + command);
+                    cb(result);
                 }).execute();
             })
             .on('connect', function () {
