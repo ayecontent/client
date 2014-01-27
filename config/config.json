@@ -1,7 +1,9 @@
 {
-  "server": "localhost",
-  "port": "9005",
-  "clientId": "demo.dotcms.com",
+  "eventhub": {
+    "address": "localhost",
+    "port": "9005"
+  },
+  "clientId": "demo3.ayecm.com",
   "sourceFolder": "/Users/phoerix/code/ayecm/test2/source/",
   "destFolder": "/Users/phoerix/code/ayecm/test2/dest/",
   "gitUser": "Jesse-James",
