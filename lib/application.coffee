@@ -1,17 +1,14 @@
-"use strict";
-
 "use strict"
 
+Injector = require "lib/injector"
+Socket = require "socket"
+
 class Application
-  constructor: (args) ->
-    {@logger, @$http, @$socketIOClient, @$Socket, @$EventHandler, @Stomp, @$config} = args
-    @eventHandler = new @$EventHandler()
-    @socket = new @$Socket {
-      "$socketIOClient": @$socketIOClient
-      "logger": @logger
-      "eventHandler": @eventHandler
-      "$config": @$config
-    }
+  constructor: (@message)->
+    do Injector.resolve(((@logger, @http, @socketIO, @stomp, @eventHandler, @sync)->), @)
+    @socket = new Socket()
+  test: ->
+    "application" + @message
   configure: ->
     @initListeners()
   start: ->
@@ -19,7 +16,13 @@ class Application
     @socket.start()
   initListeners: ->
     @eventHandler.on "socket/connect", =>
-      #@logger.info "socket connected, event handler is working"
+      @logger.info "socket connected"
+
+    @eventHandler.on "socket/command", (command, callback) =>
+      @logger.info "socket command"
+      @sync[command] (err, result)=>
+        @logger.info "socket command result #{result}"
+        callback(err, result)
 
     @eventHandler.on "socket/start", =>
       #@logger.info "socket started, event handler is working"
@@ -28,19 +31,3 @@ class Application
       #@logger.info "socket error, event handler is working"
 
 module.exports = Application
-
-
-#var commands = require("../commands");
-#
-#module.exports = function (options) {
-#
-#    require("../socket")(options).start();
-#    require("./autolocalsync")(options).start();
-#
-#    new commands.GitSyncCommand(options, function (result) {
-#    }).execute();
-#
-#    var client = {};
-#
-#    return client;
-#};

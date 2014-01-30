@@ -1,18 +1,25 @@
 "use strict"
 
+Injector = require "lib/injector"
+
 class Socket
   _RECONNECT_MIN_DELAY = 1000
   _RECONNECT_MAX_DELAY = 10000
 
-  constructor: (args) ->
-    {@$socketIOClient, @server, @logger, @eventHandler, @$config} = args
-    @_connectString = "ws://" + @$config.get("eventhub:address") + ":" + @$config.get("eventhub:port")
-    @_clientId = @$config.get("clientId")
+  constructor: () ->
+    do Injector.resolve(((@logger, @config, @socketIO,@eventHandler)->), @)
+    @_connectString = "ws://" + @config.get("eventhub:address") + ":" + @config.get("eventhub:port")
+    @_clientId = @config.get("clientId")
 
   configure: ()->
+
     @_socket.on "connect", =>
       @logger.info("client '#{@_clientId}' has connected to eventhub socket")
       @eventHandler.emit "socket/connect"
+
+    @_socket.on "command", (command,callback) =>
+      @logger.info "received socket COMMAND '#{command}'"
+      @eventHandler.emit "socket/command", command, callback
 
     @_socket.on "disconnect", =>
       @logger.info("client '#{@_clientId}' has disconnected to eventhub socket")
@@ -25,7 +32,7 @@ class Socket
       @eventHandler.emit "socket/error"
 
   start: () ->
-    @_socket = @$socketIOClient.connect @_connectString, {reconnect: false} #handling reconnection manually
+    @_socket = @socketIO.connect @_connectString, {reconnect: false} #handling reconnection manually
     @configure()
     @eventHandler.emit "socket/start"
 
@@ -34,8 +41,8 @@ class Socket
     @_delay = if @_delay < _RECONNECT_MAX_DELAY then @_delay else _RECONNECT_MAX_DELAY
     @_socket.once "error", (err) =>
       @logger.error """Socket connection error. Trying to reconnect.
-            #{err}
-            """
+      #{err}
+      """
       setTimeout(=>
         @reconnect()
       , @_delay)
@@ -43,57 +50,5 @@ class Socket
       @eventHandler.emit "socket/error"
     @_socket.socket.connect()
 
-module.exports = Socket
 
-#var logger = require("../lib/log");
-#var io = require("socket.io-client");
-#var commands = require("../commands");
-#
-#module.exports = function (options) {
-#
-#    var socket;
-#
-#    function reconnect(delay) {
-#        delay = delay || 1000;
-#        delay = delay < 10000 ? delay : 10000;
-#        socket.once("error", function () {
-#            logger.error("socket connection error. trying to reconnect; clientId: " + options.clientId + "; eventhub ip address: " + options.server);
-#            setTimeout(function () {
-#                reconnect(delay * 2);
-#            }, delay);
-#        });
-#        socket.socket.connect();
-#    }
-#
-#    function init() {
-#        socket = io.connect("ws://" + options.server + ":" + options.port, {
-#            reconnect: false //handling reconnection manually
-#        });
-#
-#        socket.once("error", function () {
-#            logger.error("socket connection error. trying to reconnect; clientId: " + options.clientId + "; eventhub ip address: " + options.server);
-#            socket.disconnect();
-#        });
-#
-#        socket
-#            .on("command", function (command, cb) {
-#                logger.info("client received socket command from eventhub; clientId: " + options.clientId + "; command: " + command);
-#                new commands[command + "Command"](options, function (result) {
-#                    logger.info("command was executed; clientId: " + options.clientId + "; command: " + command);
-#                    cb(result);
-#                }).execute();
-#            })
-#            .on("connect", function () {
-#                logger.info("client has connected to eventhub socket; clientId: " + options.clientId + "; eventhub ip address: " + options.server);
-#                socket.emit("login", options.clientId);
-#            })
-#            .on("disconnect", function () {
-#                //TODO: change logging level to warn when implemented
-#                logger.info("client disconnected from eventhub socket; clientId: " + options.clientId + "; eventhub ip address: " + options.server);
-#                !socket.socket.options.reconnect && reconnect();
-#            });
-#
-#    }
-#
-#    return {"start": init};
-#};
+module.exports = Socket

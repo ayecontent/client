@@ -1,7 +1,11 @@
 "use strict"
 
-Logger = require("lib/logger")
-logger = new Logger()
+Logger = require "lib/logger"
+config = require "config"
+expect = require "expect.js"
+
+
+logger = new Logger
 
 logger.info """
 
@@ -10,16 +14,23 @@ logger.info """
             ----------------------
             """
 
-
 Application = require "lib/application"
+Injector = require "lib/injector"
+Sync = require "lib/sync"
 
-application = new Application({
-  $http: require "http"
-  logger: logger
-  $socketIOClient: require "socket.io-client"
-  $Socket: require "socket"
-  $EventHandler: require "lib/eventHandler"
-  $config: require "config"
-})
+EventHandler = require "lib/eventHandler"
+eventHandler = new EventHandler
+
+Injector.register("eventHandler", eventHandler)
+Injector.register("config", config)
+Injector.register("logger", logger)
+Injector.register("socketIO", require "socket.io-client")
+Injector.register("http", require "http")
+
+sync = new Sync()
+
+Injector.register("sync", sync)
+
+application = new Application()
 
 application.start()
