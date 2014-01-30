@@ -16,7 +16,10 @@
     "url": "git@github.com:yottagroup/ayecms-test-4.git"
   },
   "syncignore": [".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery"],
-  "clientId": "demo3.ayecm.com",
+  "client": {
+    "sign": "u40TnjEynYaEjSUD6x2Dnjm9A1w=",
+    "id": "demo3.ayecm.com"
+  },
   "gitUser": "Jesse-James",
   "gitPassword": "qwe123QWE",
   "gitCommitterName": "executor",

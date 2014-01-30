@@ -1,6 +1,9 @@
 "use strict"
 
 Injector = require "lib/injector"
+crypto = require "crypto"
+querystring = require "querystring"
+
 
 class Socket
   _RECONNECT_MIN_DELAY = 1000
@@ -9,7 +12,8 @@ class Socket
   constructor: () ->
     do Injector.resolve(((@logger, @config, @socketIO,@eventHandler)->), @)
     @_connectString = "ws://" + @config.get("eventhub:address") + ":" + @config.get("eventhub:port")
-    @_clientId = @config.get("clientId")
+    @_clientId = @config.get("client:id")
+    @_signature = @config.get("client:sign")
 
   configure: ()->
 
@@ -32,7 +36,11 @@ class Socket
       @eventHandler.emit "socket/error"
 
   start: () ->
-    @_socket = @socketIO.connect @_connectString, {reconnect: false} #handling reconnection manually
+    query = querystring.stringify({ id: @_clientId, sign: @_signature })
+    @_socket = @socketIO.connect @_connectString, {
+      reconnect: false,
+      query: query
+    } #handling reconnection manually
     @configure()
     @eventHandler.emit "socket/start"
 
