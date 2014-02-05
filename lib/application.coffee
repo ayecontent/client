@@ -2,32 +2,32 @@
 
 Injector = require "lib/injector"
 Socket = require "socket"
+Sync = require "lib/sync"
 
 class Application
-  constructor: (@message)->
-    do Injector.resolve(((@logger, @http, @socketIO, @stomp, @eventHandler, @sync)->), @)
-    @socket = new Socket()
-  test: ->
-    "application" + @message
+  constructor: (args) ->
+    {@logger, @config} = args
+    @eventHubConnector = new Socket(logger: @logger, config: @config)
+    @sync = new Sync(logger: @logger, config: @config)
+
   configure: ->
     @initListeners()
+
   start: ->
     @configure()
-    @socket.start()
+    @eventHubConnector.start()
+
   initListeners: ->
-    @eventHandler.on "socket/connect", =>
-      @logger.info "socket connected"
+    @eventHubConnector.on "connected", (event) =>
+      @logger.info "connected to event hub"
 
-    @eventHandler.on "socket/command", (command, callback) =>
-      @logger.info "socket command"
-      @sync[command] (err, result)=>
-        @logger.info "socket command result #{result}"
-        callback(err, result)
+    @eventHubConnector.on "command", (event) =>
+      @sync.pushCommand(event.command.name, event.callback)
 
-    @eventHandler.on "socket/start", =>
+    @eventHubConnector.on "start", () =>
       #@logger.info "socket started, event handler is working"
 
-    @eventHandler.on "socket/error", =>
+    @eventHubConnector.on "error", (err) =>
       #@logger.info "socket error, event handler is working"
 
 module.exports = Application

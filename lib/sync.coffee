@@ -4,15 +4,19 @@ fs = require "fs-extra"
 async = require "async"
 path = require "path"
 exec = require('child_process').exec
+events = require "events"
 
 Rsync = require "rsync"
 
-Injector = require "lib/injector"
 
+class Sync extends events.EventEmitter
 
-class Sync
-  constructor: ()->
-    do Injector.resolve(((@logger, @config)->), @)
+  SYNC_HTTP: "sync-http"
+  SYNC_BACKUP: "sync-backup"
+  GET_STATUS: "get-status"
+
+  constructor: (args)->
+    {@config, @logger} = args
     @source = @config.get "folder:backup"
     @dest = @config.get "folder:dest"
     @flags = {}
@@ -28,10 +32,9 @@ class Sync
     @queue = async.queue (task, callback)=>
       @[task.command]((err, result)->
         #TODO: handle errors
-        if err
-          callback() #don't stop queue even if it is error
-          return task.callback(err)
-        task.callback(null, result)
+        callback()
+        if err then task.callback(err)
+        else task.callback(null, result)
       )
 
   @initFolders: (folders...) ->
@@ -48,7 +51,10 @@ class Sync
       @logger.info (if key? then "As '#{key}' file was found => ") + result
       @lastKey = key
 
-  pushCommand: (command, callback) ->
+  pushCommand: (commandName, callback) ->
+    switch commandName
+      when @SYNC_BACKUP then command = 'gitSync'
+      else command = 'gitSync'
     @queue.push({command: command, callback: callback})
 
   _checkRepositoryStatus: (callback) ->
@@ -81,25 +87,19 @@ class Sync
     Sync.initFolders(@source, @dest)
     @updateFlagIndicators()
     async.waterfall([
-
       @_checkRepositoryStatus.bind(@)
 
     , (exists, callback)=>
-        if exists isnt true
-          @_cloneRepository(callback)
-        else
-          callback(null, "success")
+        if exists isnt true then @_cloneRepository(callback)
+        else callback(null, "success")
 
     , (result, callback)=>
-        if result is "success"
-          return @_pullRepository callback
-        return callback(null, result)
+        if result is "success" then @_pullRepository(callback)
+        else callback(null, result)
 
     , (result, callback)=>
-        if result is "success"
-          return @localSync(callback)
-        return callback(null, result)
-
+        if result is "success" then @localSync(callback)
+        else callback(null, result)
     ]
     , callback
     )
