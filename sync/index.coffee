@@ -60,7 +60,7 @@ class Sync extends events.EventEmitter
   _checkRepositoryStatus: (callback) ->
     @logger.info "start to check git repository status in '#{@source}'"
     exec "git --git-dir=#{@gitDir} --work-tree=#{@source} status", (err, stdout, stderr) =>
-      @logger.info "CHECK GIT STATUS result:\n#{stdout}"
+      @logger.info "CHECK GIT STATUS result:\n#{if stdout isnt "" then stdout else stderr}"
       if stderr then return callback(null, false)
       return callback(null, true)
 
@@ -72,15 +72,15 @@ class Sync extends events.EventEmitter
       fs.mkdirsSync @source
 
     exec "git clone #{@gitUrl} #{@source}", (err, stdout, stderr) =>
-      @logger.info "CLONE GIT result:\n#{stdout}"
-      return callback(new Error(stderr)) if err
+      @logger.info "CLONE GIT result:\n#{if stdout isnt "" then stdout else stderr}"
+      return callback(err) if err
       return callback(null, "success")
 
   _pullRepository: (callback) ->
     @logger.info "start to pull git repository into '#{@source}'"
     exec "git --git-dir=#{@gitDir} --work-tree=#{@source} pull", (err, stdout, stderr) =>
-      @logger.info "PULL GIT result:\n#{stdout}"
-      return callback(new Error(stderr)) if err
+      @logger.info "PULL GIT result:\n#{if stdout isnt "" then stdout else stderr}"
+      return callback(err) if err
       return callback(null, "success")
 
   gitSync: (callback)->
@@ -117,8 +117,7 @@ class Sync extends events.EventEmitter
 
     , null
 
-    , (err) ->
-      callback err
+    , callback
 
   startAutoSync: ()->
     @_autoSync()

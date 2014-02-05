@@ -1,8 +1,7 @@
 "use strict"
 
-Injector = require "lib/injector"
-Socket = require "socket"
-Sync = require "lib/sync"
+Socket = require "eventhub_connector/socket"
+Sync = require "sync"
 
 class Application
   constructor: (args) ->
@@ -23,11 +22,5 @@ class Application
 
     @eventHubConnector.on "command", (event) =>
       @sync.pushCommand(event.command.name, event.callback)
-
-    @eventHubConnector.on "start", () =>
-      #@logger.info "socket started, event handler is working"
-
-    @eventHubConnector.on "error", (err) =>
-      #@logger.info "socket error, event handler is working"
 
 module.exports = Application
