@@ -5,20 +5,24 @@
   },
   "folder": {
     "backup": "/Users/phoerix/code/ayecm/test2/backup/",
-    "dest": "/Users/phoerix/code/ayecm/test2/dest/",
-    "emptyBackupBeforeClone": true
+    "dest": "/Users/phoerix/code/ayecm/test2/dest/"
   },
   "indicator": {
     "stopContentDelivery": ".stop-content-delivery",
     "stopPeriodicRsync": ".stop-periodic-sync"
   },
   "git": {
-    "url": "git@github.com:yottagroup/ayecms-test-4.git"
+    "url": "git@github.com:yottagroup/ayecms-test-1.git"
   },
   "syncignore": [".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery"],
   "client": {
     "sign": "u40TnjEynYaEjSUD6x2Dnjm9A1w=",
-    "id": "demo3.ayecm.com"
+    "id": "demo3.ayecm.com",
+    "contentRegion": "live",
+    "hostId": "demohost",
+    "customer": {
+      "id": "democustomer"
+    }
   },
   "gitUser": "Jesse-James",
   "gitPassword": "qwe123QWE",

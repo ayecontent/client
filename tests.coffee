@@ -1,48 +1,50 @@
 expect = require "expect.js"
-Sync = require "lib/sync"
-Injector = require "lib/injector"
+Sync = require "sync"
 config = require "config"
+util = require "util"
+
+longjohn = require('longjohn')
+longjohn.async_trace_limit = -1
 
 
 Logger = require("lib/logger")
+Application = require "lib/application"
 logger = new Logger
 
-Application = require "lib/application"
+sync = new Sync("logger": logger, "config": config)
 
-EventHandler = require "lib/eventHandler"
-eventHandler = new EventHandler
-
-Injector.register("http", require "http")
-Injector.register("logger", logger)
-Injector.register("socketIO", require "socket.io-client")
-Injector.register("eventHandler", eventHandler)
-Injector.register("config", config)
-
-sync = new Sync()
-Injector.register("sync", sync)
-
-#sync.startAutoSync()
-
-console.log(sync.flags)
+expect(sync._source).to.be.a('string')
+expect(sync._dest).to.be.a('string')
 
 
+sync.pushCommand({
+  name: "sync-http",
+  host: "localhost",
+  port: "8080",
+  added: ['first.txt'],
+  modified: [],
+  deleted: [],
+  snapshot: { id: "123"}
+})
+.then((result)->
+    console.log(result)
+  )
+.catch((error)->
+  )
+.done()
 
-expect(sync.source).to.be.a('string')
-expect(sync.dest).to.be.a('string')
+#sync.pushCommand({
+#  name: "sync-backup",
+#  host: "localhost",
+#  port: "8080",
+#  added: ['first.txt'],
+#  modified: [],
+#  deleted: [],
+#  snapshot: { id: "123"}
+#})
+#.then((result)->
+#    console.log(result)
+#  )
+#.done()
 
-sync.pushCommand("gitSync", (err, result)->
-  expect(result).to.be("success")
-)
-#
-#sync.pushCommand("localSync", (err, result)->
-#  expect(result).to.be("success")
-#)
-
-sync["_logChanges"]("result")
-
-#Injector.register("config", require "../config")
-
-application = new Application(" test")
-expect(application instanceof Application).to.be true
-application.logger.info "Hello"
-expect(application.test()).to.be "application test"
+#application = new Application("logger": logger, "config": config)

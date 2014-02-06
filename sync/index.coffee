@@ -1,133 +1,176 @@
 "use strict"
 
-fs = require "fs-extra"
-async = require "async"
+FS = require "q-io/fs"
+fs = require "fs"
+
+async = require "async-q"
+Q = require "q"
+
 path = require "path"
 exec = require('child_process').exec
 events = require "events"
+request = require "request"
 
 Rsync = require "rsync"
 
-
 class Sync extends events.EventEmitter
-
-  SYNC_HTTP: "sync-http"
-  SYNC_BACKUP: "sync-backup"
-  GET_STATUS: "get-status"
+  COMMANDS:
+    "sync-http": "syncHttp"
+    "sync-backup": "syncGit"
+    "sync-local": "syncLocal"
 
   constructor: (args)->
     {@config, @logger} = args
-    @source = @config.get "folder:backup"
-    @dest = @config.get "folder:dest"
-    @flags = {}
-    @gitUrl = @config.get "git:url"
-    @gitDir = path.resolve(@source, '.git')
-    @forceEmpty = @config.get "folder:emptyBackupBeforeClone"
+    @_source = @config.get "folder:backup"
+    @_dest = @config.get "folder:dest"
+    @_flags = {}
+    @_gitUrl = @config.get "git:url"
+    @_gitDir = path.resolve(@_source, '.git')
 
-    @rsync = new Rsync()
+    @_rsync = new Rsync()
     .flags('avz')
     .set('delete')
     .exclude(@config.get "syncignore")
 
-    @queue = async.queue (task, callback)=>
-      @[task.command]((err, result)->
-        #TODO: handle errors
-        callback()
-        if err then task.callback(err)
-        else task.callback(null, result)
-      )
+    @_queue = async.queue (task)=>
+      commandName = @COMMANDS[task.command.name]
+      # don't forget about task.callback
+      @[commandName](task.command)
 
-  @initFolders: (folders...) ->
-    #TODO: async make dirs
-    for folder in folders
-      fs.mkdirsSync(folder)
+  @initFolders: () ->
+    args = Array.prototype.slice.call(arguments, 0)
+    async.each(args, (file)->
+      FS.makeTree file
+    )
 
   updateFlagIndicators: ->
-    for key, file of @config.get "indicator"
-      @flags[key] = fs.existsSync(path.join(@source, file))
+    indicators = @config.get("indicator")
+    flags = (flag for flag of indicators)
+    async.each(flags, (flag) =>
+      FS.exists(path.join(@_source, indicators[flag]))
+      .then((result)=>
+          @_flags[flag] = result
+        )
+    )
 
   _logChanges: (result, key) ->
     if @lastKey? isnt key
       @logger.info (if key? then "As '#{key}' file was found => ") + result
       @lastKey = key
 
-  pushCommand: (commandName, callback) ->
-    switch commandName
-      when @SYNC_BACKUP then command = 'gitSync'
-      else command = 'gitSync'
-    @queue.push({command: command, callback: callback})
+  pushCommand: (command) ->
+    deferred = Q.defer()
+    @_queue.push({command: command}).then((result)=>
+      deferred.resolve("success")
+    ).catch((err)=>
+      @logger.error err.message
+      deferred.reject(err)
+    ).done()
+    deferred.promise
 
-  _checkRepositoryStatus: (callback) ->
-    @logger.info "start to check git repository status in '#{@source}'"
-    exec "git --git-dir=#{@gitDir} --work-tree=#{@source} status", (err, stdout, stderr) =>
+  _checkRepositoryStatus: () ->
+    @logger.info "start to check git repository status in '#{@_source}'"
+    deferred = Q.defer()
+    exec "git --git-dir=#{@_gitDir} --work-tree=#{@_source} status", (err, stdout, stderr) =>
       @logger.info "CHECK GIT STATUS result:\n#{if stdout isnt "" then stdout else stderr}"
-      if stderr then return callback(null, false)
-      return callback(null, true)
+      if stderr isnt "" then deferred.resolve("not git")
+      else deferred.resolve("git")
+    deferred.promise
 
-  _cloneRepository: (callback) ->
-    @logger.info "start to clone git repository '#{@gitUrl}' into '#{@source}'"
-    if @forceEmpty
-      @logger.info "emptying backup directory '#{@source}'"
-      fs.removeSync @source
-      fs.mkdirsSync @source
+  _cloneRepository: () ->
+    @logger.info "start to clone git repository '#{@_gitUrl}' into '#{@_source}'"
+    @logger.info "emptying backup directory '#{@_source}'"
+    deferred = Q.defer()
+    async.series([FS.removeTree(@_source), FS.makeTree(@_source)])
+    .then(=>
+        exec "git clone #{@_gitUrl} #{@_source}", (err, stdout, stderr) =>
+          @logger.info "CLONE GIT result:\n#{if stdout isnt "" then stdout else stderr}"
+          if stderr isnt "" then deferred.reject(err)
+          else deferred.resolve("success")
+      )
+    deferred.promise
 
-    exec "git clone #{@gitUrl} #{@source}", (err, stdout, stderr) =>
-      @logger.info "CLONE GIT result:\n#{if stdout isnt "" then stdout else stderr}"
-      return callback(err) if err
-      return callback(null, "success")
-
-  _pullRepository: (callback) ->
-    @logger.info "start to pull git repository into '#{@source}'"
-    exec "git --git-dir=#{@gitDir} --work-tree=#{@source} pull", (err, stdout, stderr) =>
+  _pullRepository: () ->
+    @logger.info "start to pull git repository into '#{@_source}'"
+    deferred = Q.defer()
+    exec "git --git-dir=#{@_gitDir} --work-tree=#{@_source} pull",
+    (err, stdout, stderr) =>
       @logger.info "PULL GIT result:\n#{if stdout isnt "" then stdout else stderr}"
-      return callback(err) if err
-      return callback(null, "success")
+      if stderr isnt "" then deferred.reject(err)
+      else deferred.resolve("success")
+    deferred.promise
 
-  gitSync: (callback)->
-    Sync.initFolders(@source, @dest)
-    @updateFlagIndicators()
-    async.waterfall([
-      @_checkRepositoryStatus.bind(@)
-
-    , (exists, callback)=>
-        if exists isnt true then @_cloneRepository(callback)
-        else callback(null, "success")
-
-    , (result, callback)=>
-        if result is "success" then @_pullRepository(callback)
-        else callback(null, result)
-
-    , (result, callback)=>
-        if result is "success" then @localSync(callback)
-        else callback(null, result)
-    ]
-    , callback
+  syncGit: (command)->
+    async.series(
+      Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()]),
+      async.waterfall([
+        @_checkRepositoryStatus.bind(@)
+      , (result)=>
+          if result is "not git" then @_cloneRepository()
+          else Q.resolve("success")
+      , (result)=>
+          if result is "success" then @_pullRepository()
+          else Q.reject("fail")
+      , (result)=>
+          if result is "success" then @syncLocal()
+          else Q.reject("fail")
+      ]
+      )
     )
 
-  localSync: (callback)->
-    Sync.initFolders(@source, @dest)
-    @rsync.source(@source).destination(@dest)
-    @rsync.execute (err, resultCode) =>
-      if err then callback err
-      result = if resultCode is 0 then "success" else "fail"
-      @logger.info """LOCAL RSYNC result:\n'#{result}';
-                  local sync from '#{@source}' to '#{@dest}';
-                  """
-      callback(null, result)
+  syncHttp: (command)->
+    formUrl = "http://#{command.host}:#{command.port}"
+    formUrl += "/#{@config.get("client:customer:id")}"
+    formUrl += "/#{@config.get("client:hostId")}"
+    formUrl += "/#{@config.get("client:contentRegion")}"
+    formUrl += "/#{command.snapshot.id}"
 
-    , null
+    Sync.initFolders(@_source, @_dest).then(=>
+      Q.all([
+        async.eachLimit(command.added.concat(command.modified), 5, (added) =>
+          wQ = Q.defer()
+          writeStream = fs.createWriteStream(path.resolve(@_source, added))
+          writeStream.on "finish", ->
+            wQ.resolve()
+          writeStream.on "close", ->
+            wQ.reject()
+          rQ = Q.defer()
+          request = request("#{formUrl}/#{added}").pipe(writeStream)
+          request.on "end", ->
+            rQ.resolve()
+          request.on "close", ->
+            rQ.reject()
+          Q.all([wQ, rQ])
+        ),
+        async.eachLimit(command.deleted, 5, (deleted) =>
+          FS.removeTree path.resolve(@_source, deleted)
+        )
+      ])
+    )
 
-    , callback
+  syncLocal: (command)->
+    deferred = Q.defer()
+    Sync.initFolders(@_source, @_dest).then(=>
+      @_rsync.source(@_source).destination(@_dest)
+      @_rsync.execute (err, resultCode) =>
+        if err then deferred.reject(err)
+        result = if resultCode is 0 then "success" else "fail"
+        @logger.info """LOCAL RSYNC result:\n'#{result}';
+                    local sync from '#{@_source}' to '#{@_dest}';
+                    """
+        deferred.resolve(result)
+    )
+    deferred.promise
 
   startAutoSync: ()->
     @_autoSync()
 
   _autoSync: ()->
-    @updateFlagIndicators()
-    if @flags.stopPeriodicRsync is on
-      @_logChanges('periodic local sync will be stopped', 'stopPeriodicRsync')
-    else if @flags.stopContentDelivery is on
-      @_logChanges('local sync will be stopped', 'stopPeriodicRsync')
-
+    @updateFlagIndicators().then(()=>
+      if @_flags.stopPeriodicRsync is on
+        @_logChanges('periodic local sync will be stopped', 'stopPeriodicRsync')
+      else if @_flags.stopContentDelivery is on
+        @_logChanges('local sync will be stopped', 'stopPeriodicRsync')
+    )
 
 module.exports = Sync

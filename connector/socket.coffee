@@ -6,7 +6,7 @@ querystring = require "querystring"
 events = require "events"
 errors = require "errors"
 socketIO = require "socket.io-client"
-EventHubConnector = require "eventhub_connector"
+EventHubConnector = require "connector"
 
 class Socket extends EventHubConnector
 

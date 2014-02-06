@@ -43,7 +43,11 @@
     "fs-extra": "~0.8.1",
     "winston": "https://github.com/yottagroup/winston/tarball/c000b0e6e6a5739d11094b3d28704a8f22ea5ca2",
     "nconf": "~0.6.9",
-    "moment": "~2.5.1"
+    "moment": "~2.5.1",
+    "request": "~2.33.0",
+    "async-q": "~0.2.1",
+    "q-io": "~1.10.8",
+    "q": "~1.0.0"
   },
   "bin": {
     "forever": "./bin/forever"

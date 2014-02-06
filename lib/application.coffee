@@ -1,6 +1,6 @@
 "use strict"
 
-Socket = require "eventhub_connector/socket"
+Socket = require "connector/socket"
 Sync = require "sync"
 
 class Application
@@ -21,6 +21,6 @@ class Application
       @logger.info "connected to event hub"
 
     @eventHubConnector.on "command", (event) =>
-      @sync.pushCommand(event.command.name, event.callback)
+      @sync.pushCommand(event.command)
 
 module.exports = Application
