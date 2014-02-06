@@ -14,6 +14,7 @@ request = require "request"
 Rsync = require "rsync"
 
 class Sync extends events.EventEmitter
+
   COMMANDS:
     "sync-http": "syncHttp"
     "sync-backup": "syncGit"
@@ -82,7 +83,7 @@ class Sync extends events.EventEmitter
     @logger.info "emptying backup directory '#{@_source}'"
     deferred = Q.defer()
     async.series([FS.removeTree(@_source), FS.makeTree(@_source)])
-    .then(=>
+    .then( =>
         exec "git clone #{@_gitUrl} #{@_source}", (err, stdout, stderr) =>
           @logger.info "CLONE GIT result:\n#{if stdout isnt "" then stdout else stderr}"
           if stderr isnt "" then deferred.reject(err)
@@ -105,13 +106,13 @@ class Sync extends events.EventEmitter
       Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()]),
       async.waterfall([
         @_checkRepositoryStatus.bind(@)
-      , (result)=>
+      ,(result) =>
           if result is "not git" then @_cloneRepository()
           else Q.resolve("success")
-      , (result)=>
+      ,(result) =>
           if result is "success" then @_pullRepository()
           else Q.reject("fail")
-      , (result)=>
+      ,(result) =>
           if result is "success" then @syncLocal()
           else Q.reject("fail")
       ]
@@ -135,10 +136,10 @@ class Sync extends events.EventEmitter
           writeStream.on "close", ->
             wQ.reject()
           rQ = Q.defer()
-          request = request("#{formUrl}/#{added}").pipe(writeStream)
-          request.on "end", ->
+          req = request("#{formUrl}/#{added}").pipe(writeStream)
+          req.on "end", ->
             rQ.resolve()
-          request.on "close", ->
+          req.on "close", ->
             rQ.reject()
           Q.all([wQ, rQ])
         ),
