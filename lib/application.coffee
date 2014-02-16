@@ -15,8 +15,11 @@ class Application
   start: ->
     @configure()
     @eventHubConnector.start()
-#    @sync.syncReset().then ()=>
-    @sync.startAutoSync()
+    @sync.syncReset().then ()=>
+      setTimeout ()=>
+        @sync.syncReset().then ()=>
+          @sync.startAutoSync()
+      , 10000
 
 
   initListeners: ->
