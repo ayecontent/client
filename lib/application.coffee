@@ -15,12 +15,22 @@ class Application
   start: ->
     @configure()
     @eventHubConnector.start()
+#    @sync.syncReset().then ()=>
+    @sync.startAutoSync()
+
 
   initListeners: ->
     @eventHubConnector.on "connected", (event) =>
       @logger.info "connected to event hub"
 
-    @eventHubConnector.on "command", (event) =>
-      @sync.pushCommand(event.command)
+    @eventHubConnector.on "command", (command, callback) =>
+      @sync.pushCommand(command)
+      .then((result) =>
+          callback(null, result)
+        )
+      .catch((err) =>
+          callback(err)
+        )
+      .done()
 
 module.exports = Application

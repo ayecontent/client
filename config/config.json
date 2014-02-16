@@ -14,15 +14,13 @@
   "git": {
     "url": "git@github.com:yottagroup/ayecms-test-1.git"
   },
-  "syncignore": [".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery"],
+  "syncIgnore": [".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery", ".DS_Store"],
   "client": {
     "sign": "u40TnjEynYaEjSUD6x2Dnjm9A1w=",
     "id": "demo3.ayecm.com",
     "contentRegion": "live",
-    "hostId": "demohost",
-    "customer": {
-      "id": "democustomer"
-    }
+    "hostId": "test_host_id",
+    "customerId": "test_customer_id"
   },
   "gitUser": "Jesse-James",
   "gitPassword": "qwe123QWE",

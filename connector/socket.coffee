@@ -10,6 +10,7 @@ EventHubConnector = require "connector"
 
 class Socket extends EventHubConnector
 
+  #TODO: fix listeners bug
   _RECONNECT_MIN_DELAY: 1000
   _RECONNECT_MAX_DELAY: 10000
 
@@ -27,10 +28,10 @@ class Socket extends EventHubConnector
 
     @_socket.on "message", (message, callback) =>
       @logger.info "received socket COMMAND '#{message.command.name}'"
-      @emit "command", {command: message.command, callback: (err, result)=>
+
+      @emit "command", message.command, (err, result)=>
         err = errors.stringifyError(err) if err?
         callback(err, result)
-      }
 
     @_socket.on "disconnect", =>
       @logger.info("client '#{@_clientId}' has disconnected to eventhub socket")
@@ -41,7 +42,8 @@ class Socket extends EventHubConnector
       @reconnect()
 
   start: () ->
-    query = querystring.stringify({ id: @_clientId, sign: @_signature })
+    client = @config.get("client")
+    query = querystring.stringify(client)
     @_socket = socketIO.connect @_connectString, {
       reconnect: false,
       query: query

@@ -2,9 +2,11 @@ expect = require "expect.js"
 Sync = require "sync"
 config = require "config"
 util = require "util"
+path = require "path"
 
 longjohn = require('longjohn')
 longjohn.async_trace_limit = -1
+
 
 
 Logger = require("lib/logger")
