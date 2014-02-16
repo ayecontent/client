@@ -96,7 +96,7 @@ class Sync extends events.EventEmitter
     exec "git --git-dir=#{@_gitDir} --work-tree=#{@_source} pull",
     (err, stdout, stderr) =>
       @logger.info "PULL GIT result:\n#{if stdout isnt "" then stdout else stderr}"
-      if stderr isnt "" then deferred.reject(err)
+      if err isnt null then deferred.reject(err)
       else deferred.resolve("success")
     deferred.promise
 

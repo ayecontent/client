@@ -147,7 +147,7 @@ Sync = (function(_super) {
     exec("git --git-dir=" + this._gitDir + " --work-tree=" + this._source + " pull", (function(_this) {
       return function(err, stdout, stderr) {
         _this.logger.info("PULL GIT result:\n" + (stdout !== "" ? stdout : stderr));
-        if (stderr !== "") {
+        if (err !== null) {
           return deferred.reject(err);
         } else {
           return deferred.resolve("success");
