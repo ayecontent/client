@@ -49,9 +49,6 @@
     "q-io": "~1.10.8",
     "q": "~1.0.0"
   },
-  "bin": {
-    "forever": "./bin/forever"
-  },
   "engines": {
     "node": ">= 0.8.0"
   }
