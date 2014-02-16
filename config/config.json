@@ -1,0 +1,31 @@
+{
+  "eventhub": {
+    "address": "localhost",
+    "port": "9005"
+  },
+  "folder": {
+    "backup": "/Users/phoerix/code/ayecm/test2/backup/",
+    "dest": "/Users/phoerix/code/ayecm/test2/dest/"
+  },
+  "indicator": {
+    "stopContentDelivery": ".stop-content-delivery",
+    "stopPeriodicRsync": ".stop-periodic-sync"
+  },
+  "git": {
+    "url": "git@github.com:yottagroup/ayecms-test-1.git"
+  },
+  "syncIgnore": [".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery", ".DS_Store"],
+  "client": {
+    "sign": "u40TnjEynYaEjSUD6x2Dnjm9A1w=",
+    "id": "demo3.ayecm.com",
+    "contentRegion": "live",
+    "hostId": "test_host_id",
+    "customerId": "test_customer_id"
+  },
+  "gitUser": "Jesse-James",
+  "gitPassword": "qwe123QWE",
+  "gitCommitterName": "executor",
+  "gitCommitterEmail": "executor@ayecm.com",
+  "allowRemoteRsync": "false",
+  "profiling": false
+}
