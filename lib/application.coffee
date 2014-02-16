@@ -1,7 +1,7 @@
 "use strict"
 
-Socket = require "connector/socket"
-Sync = require "sync"
+Socket = require "./../connector/socket"
+Sync = require "./../sync"
 
 class Application
   constructor: (args) ->

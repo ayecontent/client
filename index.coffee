@@ -1,7 +1,7 @@
 "use strict"
 
-Logger = require "lib/logger"
-config = require "config"
+Logger = require "./lib/logger"
+config = require "./config"
 expect = require "expect.js"
 
 

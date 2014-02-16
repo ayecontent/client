@@ -4,9 +4,9 @@ _ = require "lodash"
 crypto = require "crypto"
 querystring = require "querystring"
 events = require "events"
-errors = require "errors"
+errors = require "./../errors"
 socketIO = require "socket.io-client"
-EventHubConnector = require "connector"
+EventHubConnector = require "./../connector"
 
 class Socket extends EventHubConnector
 

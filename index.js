@@ -2,9 +2,9 @@
 "use strict";
 var Application, Logger, application, config, expect, logger;
 
-Logger = require("lib/logger");
+Logger = require("./lib/logger");
 
-config = require("config");
+config = require("./config");
 
 expect = require("expect.js");
 

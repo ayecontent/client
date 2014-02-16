@@ -12,11 +12,11 @@ querystring = require("querystring");
 
 events = require("events");
 
-errors = require("errors");
+errors = require("./../errors");
 
 socketIO = require("socket.io-client");
 
-EventHubConnector = require("connector");
+EventHubConnector = require("./../connector");
 
 Socket = (function(_super) {
   __extends(Socket, _super);

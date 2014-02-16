@@ -9,6 +9,9 @@
   "scripts": {
     "start": "node index.js"
   },
+  "bin": {
+     "client": "./bin/client"
+   },
   "author": {
     "name": "",
     "email": ""
