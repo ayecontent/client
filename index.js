@@ -10,7 +10,7 @@ logger = new Logger;
 
 logger.info("\n----------------------\n        START\n----------------------");
 
-Application = require("lib/application");
+Application = require("./lib/application");
 
 application = new Application({
   "logger": logger,
