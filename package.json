@@ -35,7 +35,6 @@
   "dependencies": {
     "rsync": "https://github.com/yottagroup/node-rsync/tarball/8423412111f1642728da858258ddc7c403e8cfac",
     "async": "~0.2.9",
-    "forever-monitor": "~1.2.3",
     "stack-trace": "0.0.7",
     "socket.io": "~0.9.16",
     "lodash": "~2.4.1",
