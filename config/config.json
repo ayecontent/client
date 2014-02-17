@@ -4,8 +4,8 @@
     "port": "9005"
   },
   "folder": {
-    "backup": "/home/ec2-user/backup/working/",
-    "dest": "/var/opt/client/working/"
+    "backup": "/home/ec2-user/backup/",
+    "dest": "/var/opt/client/"
   },
   "indicator": {
     "stopContentDelivery": ".stop-content-delivery",
