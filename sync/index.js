@@ -197,7 +197,7 @@ Sync = (function(_super) {
         var changeSet, formUrl;
         if (!_this._flags.stopContentDelivery) {
           _this.logger.info("sync http");
-          formUrl = "http://" + command.host + ":" + command.port;
+          formUrl = "http://" + (command.host != null ? command.host : "172.31.1.1") + ":" + (command.port != null ? command.port : "8089");
           formUrl += "/" + (_this.config.get("client:customerId"));
           formUrl += "/" + (_this.config.get("client:hostId"));
           formUrl += "/" + (_this.config.get("client:contentRegion"));
