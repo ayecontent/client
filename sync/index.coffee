@@ -125,7 +125,7 @@ class Sync extends events.EventEmitter
         if not @_flags.stopContentDelivery
           @logger.info "sync http"
           formUrl = "http://#{command.host}:#{command.port}"
-          formUrl += "/#{@config.get("client:customer:id")}"
+          formUrl += "/#{@config.get("client:customerId")}"
           formUrl += "/#{@config.get("client:hostId")}"
           formUrl += "/#{@config.get("client:contentRegion")}"
           formUrl += "/#{command.snapshot.id}"
