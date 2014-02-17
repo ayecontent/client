@@ -93,16 +93,11 @@ class Sync extends events.EventEmitter
   _pullRepository: () ->
     @logger.info "start to pull git repository into '#{@_source}'"
     deferred = Q.defer()
-    exec "git fetch", {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
+    exec "git pull", {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
       (err, stdout, stderr) =>
-        @logger.info "GIT FETCH result:\n#{if stdout isnt "" then stdout else stderr}"
+        @logger.info "GIT PULL result:\n#{if stdout isnt "" then stdout else stderr}"
         if err isnt null then deferred.reject(err)
-        else
-          exec "git checkout HEAD", {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
-            (err, stdout, stderr) =>
-              @logger.info "GIT CHECKOUT HEAD result:\n#{if stdout isnt "" then stdout else stderr}"
-              if err isnt null then deferred.reject(err)
-              else deferred.resolve("success")
+        else deferred.resolve("success")
     deferred.promise
 
   syncGit: (command)->

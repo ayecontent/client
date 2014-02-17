@@ -144,24 +144,15 @@ Sync = (function(_super) {
     var deferred;
     this.logger.info("start to pull git repository into '" + this._source + "'");
     deferred = Q.defer();
-    exec("git fetch", {
+    exec("git pull", {
       cwd: this._source
     }, (function(_this) {
       return function(err, stdout, stderr) {
-        _this.logger.info("GIT FETCH result:\n" + (stdout !== "" ? stdout : stderr));
+        _this.logger.info("GIT PULL result:\n" + (stdout !== "" ? stdout : stderr));
         if (err !== null) {
           return deferred.reject(err);
         } else {
-          return exec("git checkout HEAD", {
-            cwd: _this._source
-          }, function(err, stdout, stderr) {
-            _this.logger.info("GIT CHECKOUT HEAD result:\n" + (stdout !== "" ? stdout : stderr));
-            if (err !== null) {
-              return deferred.reject(err);
-            } else {
-              return deferred.resolve("success");
-            }
-          });
+          return deferred.resolve("success");
         }
       };
     })(this));
