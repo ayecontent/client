@@ -189,6 +189,9 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.syncHttp = function(command) {
+    this.logger.info("syncHttp message content: '" + (util.inspect(command, {
+      depth: null
+    })) + "'");
     return Q.all([Sync.initFolders(this._source, this._dest), this.updateFlagIndicators()]).then((function(_this) {
       return function() {
         var changeSet, formUrl;
@@ -199,6 +202,7 @@ Sync = (function(_super) {
           formUrl += "/" + (_this.config.get("client:hostId"));
           formUrl += "/" + (_this.config.get("client:contentRegion"));
           formUrl += "/" + command.snapshot.id;
+          _this.logger.info("syncHttp server url: '" + formUrl + "'");
           changeSet = command.snapshot.changeSet;
           return Q.all([
             async.eachLimit(changeSet.added.concat(changeSet.modified), 5, function(added) {

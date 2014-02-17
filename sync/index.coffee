@@ -119,6 +119,7 @@ class Sync extends events.EventEmitter
           Q.resolve("content delivery file was found")
 
   syncHttp: (command)->
+    @logger.info "syncHttp message content: '#{util.inspect(command, { depth: null })}'"
     Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
     .then ()=>
         if not @_flags.stopContentDelivery
@@ -128,6 +129,7 @@ class Sync extends events.EventEmitter
           formUrl += "/#{@config.get("client:hostId")}"
           formUrl += "/#{@config.get("client:contentRegion")}"
           formUrl += "/#{command.snapshot.id}"
+          @logger.info "syncHttp server url: '#{formUrl}'"
           changeSet = command.snapshot.changeSet
           Q.all([
             async.eachLimit(changeSet.added.concat(changeSet.modified), 5, (added) =>
