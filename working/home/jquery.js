@@ -1,4 +1,4 @@
-//version=1.6
+//version=1.8
 
 /*!
  * jQuery JavaScript Library v1.9.1
