@@ -93,11 +93,16 @@ class Sync extends events.EventEmitter
   _pullRepository: () ->
     @logger.info "start to pull git repository into '#{@_source}'"
     deferred = Q.defer()
-    exec "git --git-dir=#{@_gitDir} --work-tree=#{@_source} pull",
-    (err, stdout, stderr) =>
-      @logger.info "PULL GIT result:\n#{if stdout isnt "" then stdout else stderr}"
-      if err isnt null then deferred.reject(err)
-      else deferred.resolve("success")
+    exec "git fetch", {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
+      (err, stdout, stderr) =>
+        @logger.info "GIT FETCH result:\n#{if stdout isnt "" then stdout else stderr}"
+        if err isnt null then deferred.reject(err)
+        else
+          exec "git checkout HEAD", {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
+            (err, stdout, stderr) =>
+              @logger.info "GIT CHECKOUT HEAD result:\n#{if stdout isnt "" then stdout else stderr}"
+              if err isnt null then deferred.reject(err)
+              else deferred.resolve("success")
     deferred.promise
 
   syncGit: (command)->
@@ -136,7 +141,7 @@ class Sync extends events.EventEmitter
               wQ = Q.defer()
               dirname = path.dirname(path.join(@_source, added))
               fs.mkdirpSync(dirname)
-              writeStream = fs.createWriteStream(path.join(@_source, added))
+              writeStream = fs.createWriteStream(path.join(@_source, @config.get("client:contentRegion"), added))
               writeStream.on "finish", ->
                 wQ.resolve()
               writeStream.on "close", ->
@@ -166,7 +171,7 @@ class Sync extends events.EventEmitter
     Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
     .then ()=>
         if not @_flags.stopContentDelivery
-          @_rsync.source(@_source).destination(@_dest)
+          @_rsync.source(path.join(@_source, @config.get("client:contentRegion") + "/")).destination(@_dest)
           @_rsync.execute (err, resultCode) =>
             if err then deferred.reject(err)
             result = if resultCode is 0 then "success" else "fail"

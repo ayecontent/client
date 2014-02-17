@@ -144,13 +144,24 @@ Sync = (function(_super) {
     var deferred;
     this.logger.info("start to pull git repository into '" + this._source + "'");
     deferred = Q.defer();
-    exec("git --git-dir=" + this._gitDir + " --work-tree=" + this._source + " pull", (function(_this) {
+    exec("git fetch", {
+      cwd: this._source
+    }, (function(_this) {
       return function(err, stdout, stderr) {
-        _this.logger.info("PULL GIT result:\n" + (stdout !== "" ? stdout : stderr));
+        _this.logger.info("GIT FETCH result:\n" + (stdout !== "" ? stdout : stderr));
         if (err !== null) {
           return deferred.reject(err);
         } else {
-          return deferred.resolve("success");
+          return exec("git checkout HEAD", {
+            cwd: _this._source
+          }, function(err, stdout, stderr) {
+            _this.logger.info("GIT CHECKOUT HEAD result:\n" + (stdout !== "" ? stdout : stderr));
+            if (err !== null) {
+              return deferred.reject(err);
+            } else {
+              return deferred.resolve("success");
+            }
+          });
         }
       };
     })(this));
@@ -210,7 +221,7 @@ Sync = (function(_super) {
               wQ = Q.defer();
               dirname = path.dirname(path.join(_this._source, added));
               fs.mkdirpSync(dirname);
-              writeStream = fs.createWriteStream(path.join(_this._source, added));
+              writeStream = fs.createWriteStream(path.join(_this._source, _this.config.get("client:contentRegion"), added));
               writeStream.on("finish", function() {
                 return wQ.resolve();
               });
@@ -248,7 +259,7 @@ Sync = (function(_super) {
     Q.all([Sync.initFolders(this._source, this._dest), this.updateFlagIndicators()]).then((function(_this) {
       return function() {
         if (!_this._flags.stopContentDelivery) {
-          _this._rsync.source(_this._source).destination(_this._dest);
+          _this._rsync.source(path.join(_this._source, _this.config.get("client:contentRegion") + "/")).destination(_this._dest);
           return _this._rsync.execute(function(err, resultCode) {
             var result;
             if (err) {
