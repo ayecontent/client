@@ -103,7 +103,9 @@ Sync = (function(_super) {
     var deferred;
     this.logger.info("start to check git repository status in '" + this._source + "'");
     deferred = Q.defer();
-    exec("git --git-dir=" + this._gitDir + " --work-tree=" + this._source + " status", (function(_this) {
+    exec("git status", {
+      cwd: this._source
+    }, (function(_this) {
       return function(err, stdout, stderr) {
         _this.logger.info("CHECK GIT STATUS result:\n" + (stdout !== "" ? stdout : stderr));
         if (stderr !== "") {
@@ -144,7 +146,7 @@ Sync = (function(_super) {
     var deferred;
     this.logger.info("start to pull git repository into '" + this._source + "'");
     deferred = Q.defer();
-    exec("git pull", {
+    exec("git pull --ff", {
       cwd: this._source
     }, (function(_this) {
       return function(err, stdout, stderr) {
@@ -199,7 +201,7 @@ Sync = (function(_super) {
         var changeSet, formUrl;
         if (!_this._flags.stopContentDelivery) {
           _this.logger.info("sync http");
-          formUrl = "http://" + (command.host != null ? command.host : "172.31.1.1") + ":" + (command.port != null ? command.port : "8089");
+          formUrl = "http://" + command.host + ":" + command.port;
           formUrl += "/" + (_this.config.get("client:customerId"));
           formUrl += "/" + (_this.config.get("client:hostId"));
           formUrl += "/" + (_this.config.get("client:contentRegion"));

@@ -15,11 +15,8 @@ class Application
   start: ->
     @configure()
     @eventHubConnector.start()
-    @sync.syncReset().then ()=>
-      setTimeout ()=>
-        @sync.syncReset().then ()=>
-          @sync.startAutoSync()
-      , 10000
+    @sync.syncReset().then () =>
+      @sync.startAutoSync()
 
 
   initListeners: ->
@@ -27,6 +24,7 @@ class Application
       @logger.info "connected to event hub"
 
     @eventHubConnector.on "command", (command, callback) =>
+      command.name = "reset-client"
       @sync.pushCommand(command)
       .then((result) =>
           callback(null, result)

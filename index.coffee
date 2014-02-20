@@ -13,6 +13,7 @@ logger.info """
             ----------------------
             """
 
+
 Application = require "./lib/application"
 
 application = new Application ("logger": logger, "config": config)

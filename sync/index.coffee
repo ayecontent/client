@@ -35,9 +35,8 @@ class Sync extends events.EventEmitter
     .set('delete')
     .exclude(@config.get("syncIgnore"))
 
-    @_queue = async.queue (task)=>
+    @_queue = async.queue (task) =>
       commandName = @COMMANDS[task.command.name]
-      # don't forget about task.callback
       @[commandName](task.command)
 
   @initFolders: () ->
@@ -69,7 +68,7 @@ class Sync extends events.EventEmitter
   _checkRepositoryStatus: () ->
     @logger.info "start to check git repository status in '#{@_source}'"
     deferred = Q.defer()
-    exec "git --git-dir=#{@_gitDir} --work-tree=#{@_source} status", (err, stdout, stderr) =>
+    exec "git status", {cwd: @_source}, (err, stdout, stderr) =>
       @logger.info "CHECK GIT STATUS result:\n#{if stdout isnt "" then stdout else stderr}"
       if stderr isnt "" then deferred.resolve("not git")
       else deferred.resolve("git")
@@ -93,7 +92,7 @@ class Sync extends events.EventEmitter
   _pullRepository: () ->
     @logger.info "start to pull git repository into '#{@_source}'"
     deferred = Q.defer()
-    exec "git pull", {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
+    exec "git pull --ff", {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
       (err, stdout, stderr) =>
         @logger.info "GIT PULL result:\n#{if stdout isnt "" then stdout else stderr}"
         if err isnt null then deferred.reject(err)
@@ -124,7 +123,7 @@ class Sync extends events.EventEmitter
     .then ()=>
         if not @_flags.stopContentDelivery
           @logger.info "sync http"
-          formUrl = "http://#{if command.host? then command.host else "172.31.1.1"}:#{if command.port? then command.port else "8089"}"
+          formUrl = "http://#{command.host}:#{command.port}"
           formUrl += "/#{@config.get("client:customerId")}"
           formUrl += "/#{@config.get("client:hostId")}"
           formUrl += "/#{@config.get("client:contentRegion")}"

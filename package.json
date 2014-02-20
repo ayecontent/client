@@ -1,17 +1,17 @@
 {
   "name": "client",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "index.js",
   "description": "",
   "homepage": "",
   "bugs": "",
   "private": true,
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js start"
   },
   "bin": {
-     "client": "./bin/client"
-   },
+    "client": "./server.js"
+  },
   "author": {
     "name": "",
     "email": ""
@@ -49,7 +49,8 @@
     "request": "~2.33.0",
     "async-q": "~0.2.1",
     "q-io": "~1.10.8",
-    "q": "~1.0.0"
+    "q": "~1.0.0",
+    "start-stop-daemon": "~0.1.0"
   },
   "engines": {
     "node": ">= 0.8.0"
