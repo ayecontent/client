@@ -9,9 +9,6 @@
   "scripts": {
     "start": "node server.js start"
   },
-  "bin": {
-    "client": "./server.js"
-  },
   "author": {
     "name": "",
     "email": ""
