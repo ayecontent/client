@@ -24,7 +24,6 @@ class Application
       @logger.info "connected to event hub"
 
     @eventHubConnector.on "command", (command, callback) =>
-      command.name = "reset-client"
       @sync.pushCommand(command)
       .then((result) =>
           callback(null, result)

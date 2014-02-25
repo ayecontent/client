@@ -68,7 +68,7 @@ class Sync extends events.EventEmitter
   _checkRepositoryStatus: () ->
     @logger.info "start to check git repository status in '#{@_source}'"
     deferred = Q.defer()
-    exec "git status", {cwd: @_source}, (err, stdout, stderr) =>
+    exec @_wrapGit("git status", {cwd: @_source}), {cwd: @_source}, (err, stdout, stderr) =>
       @logger.info "CHECK GIT STATUS result:\n#{if stdout isnt "" then stdout else stderr}"
       if stderr isnt "" then deferred.resolve("not git")
       else deferred.resolve("git")
@@ -82,17 +82,21 @@ class Sync extends events.EventEmitter
         FS.makeTree(@_source)
     .then ()=>
         @logger.info "start to clone git repository '#{@_gitUrl}' into '#{@_source}'"
-        exec "git clone #{@_gitUrl} #{@_source}", (err, stdout, stderr) =>
+        @logger.info @_wrapGit("git clone #{@_gitUrl} #{@_source}")
+        exec @_wrapGit("git clone #{@_gitUrl} #{@_source}"), {cwd: @_source}, (err, stdout, stderr) =>
           @logger.info "CLONE GIT result:\n#{if stdout isnt "" then stdout else stderr}"
           if err isnt null then deferred.reject(err)
           else deferred.resolve("success")
 
     deferred.promise
 
+  _wrapGit: (command)->
+    "GIT_SSH=#{path.resolve(@config.get("basePath"), @config.get("git:sshShell"))} #{command}"
+
   _pullRepository: () ->
     @logger.info "start to pull git repository into '#{@_source}'"
     deferred = Q.defer()
-    exec "git pull --ff", {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
+    exec @_wrapGit("git pull --ff"), {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
       (err, stdout, stderr) =>
         @logger.info "GIT PULL result:\n#{if stdout isnt "" then stdout else stderr}"
         if err isnt null then deferred.reject(err)

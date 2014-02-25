@@ -1,0 +1,2 @@
+#!/bin/sh
+exec ssh -o ControlMaster=yes -o ControlPath=/tmp/ssh-%r@%h:%p -o ControlPersist=3600 "$@"

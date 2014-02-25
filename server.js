@@ -18,6 +18,7 @@ daemon = startStopDaemon({
   var Application, Logger, application, config, logger;
   Logger = require("./lib/logger");
   config = require("./config");
+  config.set('basePath', __dirname);
   logger = new Logger;
   logger.info("\n----------------------\n        START\n----------------------");
   Application = require("./lib/application");

@@ -15,6 +15,7 @@ daemon = startStopDaemon {
 }, () ->
   Logger = require "./lib/logger"
   config = require "./config"
+  config.set('basePath', __dirname);
   logger = new Logger
   logger.info """
 

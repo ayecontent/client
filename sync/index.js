@@ -103,7 +103,9 @@ Sync = (function(_super) {
     var deferred;
     this.logger.info("start to check git repository status in '" + this._source + "'");
     deferred = Q.defer();
-    exec("git status", {
+    exec(this._wrapGit("git status", {
+      cwd: this._source
+    }), {
       cwd: this._source
     }, (function(_this) {
       return function(err, stdout, stderr) {
@@ -129,7 +131,10 @@ Sync = (function(_super) {
     })(this)).then((function(_this) {
       return function() {
         _this.logger.info("start to clone git repository '" + _this._gitUrl + "' into '" + _this._source + "'");
-        return exec("git clone " + _this._gitUrl + " " + _this._source, function(err, stdout, stderr) {
+        _this.logger.info(_this._wrapGit("git clone " + _this._gitUrl + " " + _this._source));
+        return exec(_this._wrapGit("git clone " + _this._gitUrl + " " + _this._source), {
+          cwd: _this._source
+        }, function(err, stdout, stderr) {
           _this.logger.info("CLONE GIT result:\n" + (stdout !== "" ? stdout : stderr));
           if (err !== null) {
             return deferred.reject(err);
@@ -142,11 +147,15 @@ Sync = (function(_super) {
     return deferred.promise;
   };
 
+  Sync.prototype._wrapGit = function(command) {
+    return "GIT_SSH=" + (path.resolve(this.config.get("basePath"), this.config.get("git:sshShell"))) + " " + command;
+  };
+
   Sync.prototype._pullRepository = function() {
     var deferred;
     this.logger.info("start to pull git repository into '" + this._source + "'");
     deferred = Q.defer();
-    exec("git pull --ff", {
+    exec(this._wrapGit("git pull --ff"), {
       cwd: this._source
     }, (function(_this) {
       return function(err, stdout, stderr) {
