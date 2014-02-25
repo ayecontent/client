@@ -12,7 +12,8 @@
     "stopPeriodicRsync": ".stop-periodic-sync"
   },
   "git": {
-    "url": "git@bitbucket.org:ayecm/test_backup_storage_id.git"
+    "url": "git@bitbucket.org:ayecm/test_backup_storage_id.git",
+    "sshShell": "ssh-shell"
   },
   "syncIgnore": [".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery", ".DS_Store"],
   "client": {
