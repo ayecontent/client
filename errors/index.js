@@ -19,13 +19,24 @@ InstanceError = (function(_super) {
 
 })(Error);
 
-stringifyError = function(err, filter, space) {
-  var plainObject;
+stringifyError = function(err) {
+  var cache, plainObject, result;
   plainObject = {};
   Object.getOwnPropertyNames(err).forEach(function(key) {
     return plainObject[key] = err[key];
   });
-  return JSON.stringify(plainObject, filter, space);
+  cache = [];
+  result = JSON.stringify(plainObject, function(key, value) {
+    if (typeof value === 'object' && value !== null) {
+      if (cache.indexOf(value) !== -1) {
+        return;
+      }
+      cache.push(value);
+    }
+    return value;
+  });
+  cache = null;
+  return result;
 };
 
 assertInstance = function(obj, constructor) {

@@ -6,13 +6,27 @@ class InstanceError extends Error
     super
     Error.captureStackTrace(@, InstanceError)
 
-stringifyError = (err, filter, space) ->
+
+
+
+
+stringifyError = (err) ->
   plainObject = {}
   Object.getOwnPropertyNames(err).forEach((key)->
     plainObject[key] = err[key];
   )
-  JSON.stringify(plainObject, filter, space);
-
+  cache = []
+  result = JSON.stringify(plainObject, (key, value) ->
+    if (typeof value == 'object' && value != null)
+      if(cache.indexOf(value) != -1)
+          # Circular reference found, discard key
+          return
+      # Store value in our collection
+      cache.push(value)
+    return value
+  );
+  cache = null # Enable garbage collection
+  result
 
 assertInstance = (obj, constructor)->
   throw new InstanceError() if not (obj instanceof constructor)

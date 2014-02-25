@@ -146,7 +146,7 @@ Sync = (function(_super) {
     var deferred;
     this.logger.info("start to pull git repository into '" + this._source + "'");
     deferred = Q.defer();
-    exec("git pull", {
+    exec("git pull --ff", {
       cwd: this._source
     }, (function(_this) {
       return function(err, stdout, stderr) {
