@@ -153,11 +153,11 @@ Sync = (function(_super) {
     var deferred;
     this.logger.info("start to pull git repository into '" + this._source + "'");
     deferred = Q.defer();
-    exec(this._wrapGit("git reset --hard HEAD"), {
+    exec(this._wrapGit("git clean -xdf"), {
       cwd: this._source
     }, (function(_this) {
       return function(err, stdout, stderr) {
-        _this.logger.info("GIT RESET HARD result:\n" + (stdout !== "" ? stdout : stderr));
+        _this.logger.info("GIT ClEAN result:\n" + (stdout !== "" ? stdout : stderr));
         if (err !== null) {
           return deferred.reject(err);
         } else {
