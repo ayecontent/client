@@ -96,11 +96,16 @@ class Sync extends events.EventEmitter
   _pullRepository: () ->
     @logger.info "start to pull git repository into '#{@_source}'"
     deferred = Q.defer()
-    exec @_wrapGit("git pull --ff"), {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
+    exec @_wrapGit("git reset --hard"), {cwd: @_source},
       (err, stdout, stderr) =>
-        @logger.info "GIT PULL result:\n#{if stdout isnt "" then stdout else stderr}"
+        @logger.info "GIT RESET HARD result:\n#{if stdout isnt "" then stdout else stderr}"
         if err isnt null then deferred.reject(err)
-        else deferred.resolve("success")
+        else
+          exec @_wrapGit("git pull --ff"), {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
+            (err, stdout, stderr) =>
+              @logger.info "GIT PULL result:\n#{if stdout isnt "" then stdout else stderr}"
+              if err isnt null then deferred.reject(err)
+              else deferred.resolve("success")
     deferred.promise
 
   syncGit: (command)->
@@ -137,7 +142,7 @@ class Sync extends events.EventEmitter
           Q.all([
             async.eachLimit(changeSet.added.concat(changeSet.modified), 5, (added) =>
               wQ = Q.defer()
-              dirname = path.dirname(path.join(@_source, added))
+              dirname = path.dirname(path.join(@_source, @config.get("client:contentRegion"), added))
               fs.mkdirpSync(dirname)
               writeStream = fs.createWriteStream(path.join(@_source, @config.get("client:contentRegion"), added))
               writeStream.on "finish", ->
@@ -153,7 +158,7 @@ class Sync extends events.EventEmitter
               Q.all([wQ, rQ])
             ),
             async.eachLimit(changeSet.deleted, 5, (deleted) =>
-              FS.removeTree path.join(@_source, deleted)
+              FS.removeTree path.join(@_source, @config.get("client:contentRegion"), deleted)
             )
           ])
         else

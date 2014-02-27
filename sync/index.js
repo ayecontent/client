@@ -155,15 +155,24 @@ Sync = (function(_super) {
     var deferred;
     this.logger.info("start to pull git repository into '" + this._source + "'");
     deferred = Q.defer();
-    exec(this._wrapGit("git pull --ff"), {
+    exec(this._wrapGit("git reset --hard"), {
       cwd: this._source
     }, (function(_this) {
       return function(err, stdout, stderr) {
-        _this.logger.info("GIT PULL result:\n" + (stdout !== "" ? stdout : stderr));
+        _this.logger.info("GIT RESET HARD result:\n" + (stdout !== "" ? stdout : stderr));
         if (err !== null) {
           return deferred.reject(err);
         } else {
-          return deferred.resolve("success");
+          return exec(_this._wrapGit("git pull --ff"), {
+            cwd: _this._source
+          }, function(err, stdout, stderr) {
+            _this.logger.info("GIT PULL result:\n" + (stdout !== "" ? stdout : stderr));
+            if (err !== null) {
+              return deferred.reject(err);
+            } else {
+              return deferred.resolve("success");
+            }
+          });
         }
       };
     })(this));
@@ -221,7 +230,7 @@ Sync = (function(_super) {
             async.eachLimit(changeSet.added.concat(changeSet.modified), 5, function(added) {
               var dirname, rQ, req, wQ, writeStream;
               wQ = Q.defer();
-              dirname = path.dirname(path.join(_this._source, added));
+              dirname = path.dirname(path.join(_this._source, _this.config.get("client:contentRegion"), added));
               fs.mkdirpSync(dirname);
               writeStream = fs.createWriteStream(path.join(_this._source, _this.config.get("client:contentRegion"), added));
               writeStream.on("finish", function() {
@@ -240,7 +249,7 @@ Sync = (function(_super) {
               });
               return Q.all([wQ, rQ]);
             }), async.eachLimit(changeSet.deleted, 5, function(deleted) {
-              return FS.removeTree(path.join(_this._source, deleted));
+              return FS.removeTree(path.join(_this._source, _this.config.get("client:contentRegion"), deleted));
             })
           ]);
         } else {
