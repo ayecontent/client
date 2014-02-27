@@ -13,19 +13,15 @@ daemon = startStopDaemon {
 #  outFile: 'log/forever.out', # Path to log output from child stdout
   errFile: path.resolve(__dirname, 'log/forever.err')
 }, () ->
-  Logger = require "./lib/logger"
-  config = require "./config"
-  config.set('basePath', __dirname);
-  logger = new Logger
-  logger.info """
+    Logger = require "./lib/logger"
+    logger = new Logger()
 
-              ----------------------
-                      START
-              ----------------------
-              """
-  Application = require "./lib/application"
-  application = new Application ("logger": logger, "config": config)
-  application.start()
+    logger.info "----------- START -----------"
+
+    Application = require "./lib/application"
+
+    application = new Application ("logger": logger, "config": require "./config")
+    application.start()
 
 
 daemon.on "restart", () ->

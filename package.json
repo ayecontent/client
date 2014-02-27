@@ -1,6 +1,6 @@
 {
   "name": "client",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "index.js",
   "description": "",
   "homepage": "",
@@ -40,7 +40,7 @@
     "lodash": "~2.4.1",
     "socket.io-client": "~0.9.16",
     "fs-extra": "~0.8.1",
-    "winston": "https://github.com/yottagroup/winston/tarball/c000b0e6e6a5739d11094b3d28704a8f22ea5ca2",
+    "winston": "https://github.com/yottagroup/winston/tarball/8fec14b44671c4528f357dd94b6defedffffaae4",
     "nconf": "~0.6.9",
     "moment": "~2.5.1",
     "request": "~2.33.0",
