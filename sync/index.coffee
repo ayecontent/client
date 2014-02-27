@@ -68,7 +68,7 @@ class Sync extends events.EventEmitter
   _checkRepositoryStatus: () ->
     @logger.info "start to check git repository status in '#{@_source}'"
     deferred = Q.defer()
-    exec @_wrapGit("git status", {cwd: @_source}), {cwd: @_source}, (err, stdout, stderr) =>
+    exec @_wrapGit("git status"), {cwd: @_source}, (err, stdout, stderr) =>
       @logger.info "CHECK GIT STATUS result:\n#{if stdout isnt "" then stdout else stderr}"
       if stderr isnt "" then deferred.resolve("not git")
       else deferred.resolve("git")
@@ -193,7 +193,7 @@ class Sync extends events.EventEmitter
       @_lastKey = key
 
   startAutoSync: ()->
-    @intervalId = setInterval ()=>
+    @intervalId = setInterval () =>
       @_syncAuto()
     , 10000 if not @intervalId?
 

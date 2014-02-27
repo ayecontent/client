@@ -103,9 +103,7 @@ Sync = (function(_super) {
     var deferred;
     this.logger.info("start to check git repository status in '" + this._source + "'");
     deferred = Q.defer();
-    exec(this._wrapGit("git status", {
-      cwd: this._source
-    }), {
+    exec(this._wrapGit("git status"), {
       cwd: this._source
     }, (function(_this) {
       return function(err, stdout, stderr) {
