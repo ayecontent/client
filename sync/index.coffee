@@ -96,7 +96,7 @@ class Sync extends events.EventEmitter
   _pullRepository: () ->
     @logger.info "start to pull git repository into '#{@_source}'"
     deferred = Q.defer()
-    exec @_wrapGit("git reset --hard"), {cwd: @_source},
+    exec @_wrapGit("git reset --hard HEAD"), {cwd: @_source},
       (err, stdout, stderr) =>
         @logger.info "GIT RESET HARD result:\n#{if stdout isnt "" then stdout else stderr}"
         if err isnt null then deferred.reject(err)
