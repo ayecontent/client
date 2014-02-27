@@ -15,14 +15,16 @@ daemon = startStopDaemon({
   logFile: path.resolve(__dirname, 'log/forever.log'),
   errFile: path.resolve(__dirname, 'log/forever.err')
 }, function() {
-  var Application, Logger, application, logger;
+  var Application, Logger, application, config, logger;
   Logger = require("./lib/logger");
   logger = new Logger();
   logger.info("----------- START -----------");
   Application = require("./lib/application");
+  config = require("./config");
+  config.set("basePath", __dirname);
   application = new Application({
     "logger": logger,
-    "config": require("./config")
+    "config": config
   });
   return application.start();
 });

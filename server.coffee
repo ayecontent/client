@@ -20,7 +20,10 @@ daemon = startStopDaemon {
 
     Application = require "./lib/application"
 
-    application = new Application ("logger": logger, "config": require "./config")
+    config = require "./config"
+    config.set "basePath", __dirname
+
+    application = new Application ("logger": logger, "config": config)
     application.start()
 
 
