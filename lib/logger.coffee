@@ -13,7 +13,7 @@ class Logger extends winston.Logger
   constructor: () ->
     logFolder = path.resolve(__dirname, "../log")
     fs.mkdirpSync(logFolder)
-    logFilePath = path.join(logFolder, "data.log")
+    logFilePath = path.join(logFolder, "client.log")
     @transports = [
       new winston.transports.Console(
         timestamp: timestamp,
@@ -21,7 +21,7 @@ class Logger extends winston.Logger
         level: "debug" #if ENV == "development" then "debug" else "error",
         handleExceptions: true
       ),
-      new winston.transports.File(
+      new winston.transports.DailyRotateFile(
         timestamp: timestamp,
         filename: logFilePath,
         json: false,
