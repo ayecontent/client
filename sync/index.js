@@ -45,10 +45,17 @@ Sync = (function(_super) {
       debug: true
     }).flags('avz').set('delete').exclude(this.config.get("syncIgnore"));
     this._queue = async.queue((function(_this) {
-      return function(task) {
+      return function(command) {
         var commandName;
-        commandName = _this.COMMANDS[task.command.name];
-        return _this[commandName](task.command);
+        _this.logger.startTime("Command " + (util.inspect(command, {
+          depth: 30
+        })) + " processing");
+        commandName = _this.COMMANDS[command.name];
+        return _this[commandName](command).then(function() {
+          return _this.logger.info(_this.logger.printTime("Command " + (util.inspect(command, {
+            depth: 30
+          })) + " processing"));
+        });
       };
     })(this));
   }
@@ -82,36 +89,24 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.pushCommand = function(command) {
-    var deferred;
-    deferred = Q.defer();
-    this._queue.push({
-      command: command
-    }).then((function(_this) {
-      return function(result) {
-        return deferred.resolve("success");
-      };
-    })(this))["catch"]((function(_this) {
-      return function(err) {
-        _this.logger.error(err);
-        return deferred.reject(err);
-      };
-    })(this)).done();
-    return deferred.promise;
+    this.logger.startTime("Command " + (util.inspect(command, {
+      depth: 30
+    })) + " in queue");
+    return this._queue.push(command);
   };
 
   Sync.prototype._checkRepositoryStatus = function() {
     var deferred;
-    this.logger.info("start to check git repository status in '" + this._source + "'");
+    this.logger.info("Start GIT status of '" + this._source + "'. Command: '" + (this._wrapGit("git status")) + "'");
     deferred = Q.defer();
-    exec(this._wrapGit("git status"), {
-      cwd: this._source
-    }, (function(_this) {
+    this.logger.startTime("GIT STATUS");
+    this._execGit("git status", (function(_this) {
       return function(err, stdout, stderr) {
-        _this.logger.info("CHECK GIT STATUS result:\n" + (stdout !== "" ? stdout : stderr));
+        _this.logger.info("GIT STATUS result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT STATUS")));
         if (stderr !== "") {
-          return deferred.resolve("not git");
+          return deferred.resolve("NOT_GIT");
         } else {
-          return deferred.resolve("git");
+          return deferred.resolve("GIT");
         }
       };
     })(this));
@@ -121,23 +116,21 @@ Sync = (function(_super) {
   Sync.prototype._cloneRepository = function() {
     var deferred;
     deferred = Q.defer();
-    this.logger.info("emptying backup directory '" + this._source + "'");
+    this.logger.info("Cleaning backup directory '" + this._source + "'");
     FS.removeTree(this._source).then((function(_this) {
       return function() {
         return FS.makeTree(_this._source);
       };
     })(this)).then((function(_this) {
       return function() {
-        _this.logger.info("start to clone git repository '" + _this._gitUrl + "' into '" + _this._source + "'");
-        _this.logger.info(_this._wrapGit("git clone " + _this._gitUrl + " " + _this._source));
-        return exec(_this._wrapGit("git clone " + _this._gitUrl + " " + _this._source), {
-          cwd: _this._source
-        }, function(err, stdout, stderr) {
-          _this.logger.info("CLONE GIT result:\n" + (stdout !== "" ? stdout : stderr));
+        _this.logger.info("Start GIT CLONE. Clone '" + _this._gitUrl + "' into '" + _this._source + "'. Command: '" + (_this._wrapGit("git clone " + _this._gitUrl + " " + _this._source)) + "'");
+        _this.logger.startTime("GIT CLONE");
+        return _this._execGit("git clone " + _this._gitUrl + " " + _this._source, function(err, stdout, stderr) {
+          _this.logger.info("GIT CLONE result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT CLONE")));
           if (err !== null) {
             return deferred.reject(err);
           } else {
-            return deferred.resolve("success");
+            return deferred.resolve("SUCCESS");
           }
         });
       };
@@ -146,32 +139,44 @@ Sync = (function(_super) {
   };
 
   Sync.prototype._wrapGit = function(command) {
-    return "GIT_SSH=" + (path.resolve(this.config.get("basePath"), this.config.get("git:sshShell"))) + " " + command;
+    return "GIT_SSH=" + (path.join(this.config.get("basePath"), this.config.get("git:sshShell"))) + " " + command;
+  };
+
+  Sync.prototype._execGit = function(command, callback) {
+    return exec(this._wrapGit(command), {
+      cwd: this._source,
+      timeout: this.config.get("execTimeout")
+    }, callback);
   };
 
   Sync.prototype._pullRepository = function() {
     var deferred;
-    this.logger.info("start to pull git repository into '" + this._source + "'");
     deferred = Q.defer();
-    exec(this._wrapGit("git clean -xdf"), {
-      cwd: this._source
-    }, (function(_this) {
+    this.logger.info("Start GIT CLEAN. Command: '" + (this._wrapGit("git clean -xdf")) + "'");
+    this.logger.startTime("GIT CLEAN");
+    this._execGit("git clean -xdf", (function(_this) {
       return function(err, stdout, stderr) {
-        _this.logger.info("GIT ClEAN result:\n" + (stdout !== "" ? stdout : stderr));
+        _this.logger.info("GIT CLEAN result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT CLEAN")));
         if (err !== null) {
           return deferred.reject(err);
-        } else {
-          return exec(_this._wrapGit("git pull --ff"), {
-            cwd: _this._source
-          }, function(err, stdout, stderr) {
-            _this.logger.info("GIT PULL result:\n" + (stdout !== "" ? stdout : stderr));
+        }
+        _this.logger.info("Start GIT RESET. Command: '" + (_this._wrapGit("git reset --hard origin/master")) + "'");
+        _this.logger.startTime("GIT RESET");
+        return _this._execGit("git reset --hard origin/master", function(err, stdout, stderr) {
+          _this.logger.info("GIT RESET result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT RESET")));
+          if (err !== null) {
+            return deferred.reject(err);
+          }
+          _this.logger.info("Start GIT PULL. Command: '" + (_this._wrapGit("git pull --ff")) + "'");
+          _this.logger.startTime("GIT PULL");
+          return _this._execGit("git pull --ff", function(err, stdout, stderr) {
+            _this.logger.info("GIT PULL result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT PULL")));
             if (err !== null) {
               return deferred.reject(err);
-            } else {
-              return deferred.resolve("success");
             }
+            return deferred.resolve("SUCCESS");
           });
-        }
+        });
       };
     })(this));
     return deferred.promise;
@@ -182,50 +187,48 @@ Sync = (function(_super) {
       return function() {
         if (!_this._flags.stopContentDelivery) {
           return _this._checkRepositoryStatus().then(function(result) {
-            if (result === "not git") {
+            if (result === "NOT_GIT") {
               return _this._cloneRepository();
             } else {
-              return Q.resolve("success");
+              return Q.resolve("SUCCESS");
             }
           }).then(function(result) {
-            if (result === "success") {
+            if (result === "SUCCESS") {
               return _this._pullRepository();
             } else {
-              return Q.reject("fail");
+              return Q.reject("FAIL");
             }
           }).then(function(result) {
-            if (result === "success") {
+            if (result === "SUCCESS") {
               return _this.syncLocal(command);
             } else {
-              return Q.reject("fail");
+              return Q.reject("FAIL");
             }
           });
         } else {
-          _this.logger.info("content delivery file was found");
-          return Q.resolve("content delivery file was found");
+          _this.logger.info("Content delivery file was found.");
+          return Q.resolve("Content delivery file was found.");
         }
       };
     })(this));
   };
 
   Sync.prototype.syncHttp = function(command) {
-    this.logger.info("syncHttp message content: '" + (util.inspect(command, {
-      depth: null
-    })) + "'");
+    this.logger.info("Start SYNC-HTTP.");
+    this.logger.startTime("SYNC-HTTP");
     return Q.all([Sync.initFolders(this._source, this._dest), this.updateFlagIndicators()]).then((function(_this) {
       return function() {
         var changeSet, formUrl;
         if (!_this._flags.stopContentDelivery) {
-          _this.logger.info("sync http");
           formUrl = "http://" + command.host + ":" + command.port;
           formUrl += "/" + (_this.config.get("client:customerId"));
           formUrl += "/" + (_this.config.get("client:hostId"));
           formUrl += "/" + (_this.config.get("client:contentRegion"));
           formUrl += "/" + command.snapshot.id;
-          _this.logger.info("syncHttp server url: '" + formUrl + "'");
+          _this.logger.info("Constructed SYNC-HTTP fetch url: '" + formUrl + "'");
           changeSet = command.snapshot.changeSet;
           return Q.all([
-            async.eachLimit(changeSet.added.concat(changeSet.modified), 5, function(added) {
+            async.eachLimit(changeSet.added.concat(changeSet.modified), 5, function(changed) {
               var dirname, rQ, req, wQ, writeStream;
               wQ = Q.defer();
               dirname = path.dirname(path.join(_this._source, _this.config.get("client:contentRegion"), added));
@@ -238,25 +241,30 @@ Sync = (function(_super) {
                 return wQ.reject();
               });
               rQ = Q.defer();
-              req = request("" + formUrl + added).pipe(writeStream);
+              _this.logger.info("Start Download '" + formUrl + changed + "'");
+              _this.logger.startTime("Download " + changed);
+              req = request("" + formUrl + changed).pipe(writeStream);
               req.on("end", function() {
                 return rQ.resolve();
               });
               req.on("close", function() {
                 return rQ.reject();
               });
-              return Q.all([wQ, rQ]);
+              return Q.all([wQ, rQ]).then(function() {
+                return this.logger.info("Download of " + changed + " is DONE. " + (this.logger.printTime("Download " + changed)));
+              });
             }), async.eachLimit(changeSet.deleted, 5, function(deleted) {
               return FS.removeTree(path.join(_this._source, _this.config.get("client:contentRegion"), deleted));
             })
           ]);
         } else {
-          _this.logger.info("content delivery file was found");
-          return Q.resolve("content delivery file was found");
+          _this.logger.info("Content delivery file is found.");
+          return Q.resolve("Content delivery file is found.");
         }
       };
     })(this)).then((function(_this) {
       return function() {
+        _this.logger.info("SYNC-HTTP is DONE. " + (_this.logger.printTime("SYNC-HTTP")));
         return _this.syncLocal(command);
       };
     })(this));
@@ -265,6 +273,8 @@ Sync = (function(_super) {
   Sync.prototype.syncLocal = function(command) {
     var deferred;
     deferred = Q.defer();
+    this.logger.info("Start LOCAL-SYNC. Rsync from '" + this._source + "' to '" + this._dest + "'.");
+    this.logger.startTime("LOCAL-SYNC");
     Q.all([Sync.initFolders(this._source, this._dest), this.updateFlagIndicators()]).then((function(_this) {
       return function() {
         if (!_this._flags.stopContentDelivery) {
@@ -274,13 +284,13 @@ Sync = (function(_super) {
             if (err) {
               deferred.reject(err);
             }
-            result = resultCode === 0 ? "success" : "fail";
-            _this.logger.info("LOCAL RSYNC result:\n'" + result + "';\nlocal sync from '" + _this._source + "' to '" + _this._dest + "';");
+            result = resultCode === 0 ? "SUCCESS" : "FAIL";
+            _this.logger.info("LOCAL-SYNC result: '" + result + "'. " + (_this.logger.printTime("LOCAL-SYNC")));
             return deferred.resolve(result);
           });
         } else {
-          _this.logger.info("content delivery file was found");
-          return deferred.resolve("content delivery file was found");
+          _this.logger.info("Content delivery file is found.");
+          return deferred.resolve("Content delivery file is found.");
         }
       };
     })(this));
@@ -289,12 +299,13 @@ Sync = (function(_super) {
 
   Sync.prototype._logChanges = function(result, key) {
     if (this._lastKey !== key) {
-      this.logger.info("" + (key != null ? "as " + key + " was found => " : "") + result);
+      this.logger.info("" + (key != null ? "" + key + " is found. " : "") + result);
       return this._lastKey = key;
     }
   };
 
   Sync.prototype.startAutoSync = function() {
+    this.logger.info("Start AUTO-SYNC");
     if (this.intervalId == null) {
       return this.intervalId = setInterval((function(_this) {
         return function() {
@@ -305,6 +316,7 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.stopAutoSync = function() {
+    this.logger.info("Stop AUTO-SYNC");
     if (this.intervalId != null) {
       clearInterval(this.intervalId);
       return delete this.intervalId;
@@ -314,6 +326,8 @@ Sync = (function(_super) {
   Sync.prototype.syncReset = function() {
     var deferred;
     deferred = Q.defer();
+    this.logger.startTime("SYNC-RESET started.");
+    this.logger.startTime("SYNC-RESET");
     this.pushCommand({
       name: "sync-backup"
     }).then((function(_this) {
@@ -322,6 +336,7 @@ Sync = (function(_super) {
           return _this.pushCommand({
             name: "sync-backup"
           }).then(function(result) {
+            _this.logger.info("SYNC-RESET is DONE. " + (_this.logger.printTime("SYNC-RESET")));
             return deferred.resolve(result);
           });
         }, 10000);
@@ -334,15 +349,15 @@ Sync = (function(_super) {
     return this.updateFlagIndicators().then((function(_this) {
       return function() {
         if (_this._flags.stopContentDelivery) {
-          return _this._logChanges('content delivery stopped', 'stopContentDelivery');
+          return _this._logChanges('Content delivery stopped.', 'stopContentDelivery');
         } else {
           if (_this._lastKey === "stopContentDelivery") {
-            _this._logChanges('content delivery restarted');
+            _this._logChanges('Content delivery restarted.');
             return _this.syncReset();
           } else if (_this._flags.stopPeriodicRsync === true) {
-            return _this._logChanges('periodic local syncstopped', 'stopPeriodicRsync');
+            return _this._logChanges('Periodic LOCAL-SYNC stopped.', 'stopPeriodicRsync');
           } else {
-            _this._logChanges('periodic local sync started');
+            _this._logChanges('Periodic LOCAL-SYNC started.');
             return _this.pushCommand({
               name: "sync-local"
             });
@@ -352,8 +367,8 @@ Sync = (function(_super) {
     })(this));
   };
 
+  module.exports = Sync;
+
   return Sync;
 
 })(events.EventEmitter);
-
-module.exports = Sync;

@@ -35,9 +35,11 @@ class Sync extends events.EventEmitter
     .set('delete')
     .exclude(@config.get("syncIgnore"))
 
-    @_queue = async.queue (task) =>
-      commandName = @COMMANDS[task.command.name]
-      @[commandName](task.command)
+    @_queue = async.queue (command) =>
+      @logger.startTime ("Command #{util.inspect(command, {depth: 30})} processing")
+      commandName = @COMMANDS[command.name]
+      @[commandName](command).then ()=>
+        @logger.info @logger.printTime ("Command #{util.inspect(command, {depth: 30})} processing")
 
   @initFolders: () ->
     args = Array.prototype.slice.call(arguments, 0)
@@ -56,56 +58,58 @@ class Sync extends events.EventEmitter
     )
 
   pushCommand: (command) ->
-    deferred = Q.defer()
-    @_queue.push({command: command}).then((result)=>
-      deferred.resolve("success")
-    ).catch((err)=>
-      @logger.error err
-      deferred.reject(err)
-    ).done()
-    deferred.promise
+    @logger.startTime ("Command #{util.inspect(command, {depth: 30})} in queue")
+    @_queue.push(command)
 
   _checkRepositoryStatus: () ->
-    @logger.info "start to check git repository status in '#{@_source}'"
+    @logger.info "Start GIT status of '#{@_source}'. Command: '#{@_wrapGit "git status"}'"
     deferred = Q.defer()
-    exec @_wrapGit("git status"), {cwd: @_source}, (err, stdout, stderr) =>
-      @logger.info "CHECK GIT STATUS result:\n#{if stdout isnt "" then stdout else stderr}"
-      if stderr isnt "" then deferred.resolve("not git")
-      else deferred.resolve("git")
+    @logger.startTime("GIT STATUS")
+    @_execGit "git status", (err, stdout, stderr) =>
+      @logger.info "GIT STATUS result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT STATUS")}"
+      if stderr isnt "" then deferred.resolve("NOT_GIT")
+      else deferred.resolve("GIT")
     deferred.promise
 
   _cloneRepository: () ->
     deferred = Q.defer()
-    @logger.info "emptying backup directory '#{@_source}'"
+    @logger.info "Cleaning backup directory '#{@_source}'"
     FS.removeTree(@_source)
     .then ()=>
         FS.makeTree(@_source)
     .then ()=>
-        @logger.info "start to clone git repository '#{@_gitUrl}' into '#{@_source}'"
-        @logger.info @_wrapGit("git clone #{@_gitUrl} #{@_source}")
-        exec @_wrapGit("git clone #{@_gitUrl} #{@_source}"), {cwd: @_source}, (err, stdout, stderr) =>
-          @logger.info "CLONE GIT result:\n#{if stdout isnt "" then stdout else stderr}"
+        @logger.info "Start GIT CLONE. Clone '#{@_gitUrl}' into '#{@_source}'. Command: '#{@_wrapGit("git clone #{@_gitUrl} #{@_source}")}'"
+        @logger.startTime("GIT CLONE")
+        @_execGit "git clone #{@_gitUrl} #{@_source}", (err, stdout, stderr) =>
+          @logger.info "GIT CLONE result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT CLONE")}"
           if err isnt null then deferred.reject(err)
-          else deferred.resolve("success")
-
+          else deferred.resolve("SUCCESS")
     deferred.promise
 
-  _wrapGit: (command)->
-    "GIT_SSH=#{path.resolve(@config.get("basePath"), @config.get("git:sshShell"))} #{command}"
+  _wrapGit: (command) ->
+    "GIT_SSH=#{path.join(@config.get("basePath"), @config.get("git:sshShell"))} #{command}"
+
+  _execGit: (command, callback) ->
+    exec @_wrapGit(command), {cwd: @_source, timeout: @config.get("execTimeout")}, callback
 
   _pullRepository: () ->
-    @logger.info "start to pull git repository into '#{@_source}'"
     deferred = Q.defer()
-    exec @_wrapGit("git clean -xdf"), {cwd: @_source},
-      (err, stdout, stderr) =>
-        @logger.info "GIT ClEAN result:\n#{if stdout isnt "" then stdout else stderr}"
-        if err isnt null then deferred.reject(err)
-        else
-          exec @_wrapGit("git pull --ff"), {cwd: @_source}, #git checkout HEAD path/to/your/dir/or/file
-            (err, stdout, stderr) =>
-              @logger.info "GIT PULL result:\n#{if stdout isnt "" then stdout else stderr}"
-              if err isnt null then deferred.reject(err)
-              else deferred.resolve("success")
+    @logger.info "Start GIT CLEAN. Command: '#{@_wrapGit "git clean -xdf"}'"
+    @logger.startTime("GIT CLEAN")
+    @_execGit "git clean -xdf", (err, stdout, stderr) =>
+      @logger.info "GIT CLEAN result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT CLEAN")}"
+      if err isnt null then return deferred.reject(err)
+      @logger.info "Start GIT RESET. Command: '#{@_wrapGit "git reset --hard origin/master"}'"
+      @logger.startTime("GIT RESET")
+      @_execGit "git reset --hard origin/master", (err, stdout, stderr) =>
+        @logger.info "GIT RESET result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT RESET")}"
+        if err isnt null then return deferred.reject(err)
+        @logger.info "Start GIT PULL. Command: '#{@_wrapGit "git pull --ff"}'"
+        @logger.startTime("GIT PULL")
+        @_execGit "git pull --ff", (err, stdout, stderr) =>
+          @logger.info "GIT PULL result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT PULL")}"
+          if err isnt null then return deferred.reject(err)
+          deferred.resolve("SUCCESS")
     deferred.promise
 
   syncGit: (command)->
@@ -114,33 +118,33 @@ class Sync extends events.EventEmitter
         if not @_flags.stopContentDelivery
           @_checkRepositoryStatus()
           .then (result) =>
-              if result is "not git" then @_cloneRepository()
-              else Q.resolve("success")
+              if result is "NOT_GIT" then @_cloneRepository()
+              else Q.resolve("SUCCESS")
           .then (result) =>
-              if result is "success" then @_pullRepository()
-              else Q.reject("fail")
+              if result is "SUCCESS" then @_pullRepository()
+              else Q.reject("FAIL")
           .then (result) =>
-              if result is "success" then @syncLocal(command)
-              else Q.reject("fail")
+              if result is "SUCCESS" then @syncLocal(command)
+              else Q.reject("FAIL")
         else
-          @logger.info "content delivery file was found"
-          Q.resolve("content delivery file was found")
+          @logger.info "Content delivery file was found."
+          Q.resolve("Content delivery file was found.")
 
   syncHttp: (command)->
-    @logger.info "syncHttp message content: '#{util.inspect(command, { depth: null })}'"
+    @logger.info "Start SYNC-HTTP."
+    @logger.startTime("SYNC-HTTP")
     Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
     .then ()=>
         if not @_flags.stopContentDelivery
-          @logger.info "sync http"
           formUrl = "http://#{command.host}:#{command.port}"
           formUrl += "/#{@config.get("client:customerId")}"
           formUrl += "/#{@config.get("client:hostId")}"
           formUrl += "/#{@config.get("client:contentRegion")}"
           formUrl += "/#{command.snapshot.id}"
-          @logger.info "syncHttp server url: '#{formUrl}'"
+          @logger.info "Constructed SYNC-HTTP fetch url: '#{formUrl}'"
           changeSet = command.snapshot.changeSet
           Q.all([
-            async.eachLimit(changeSet.added.concat(changeSet.modified), 5, (added) =>
+            async.eachLimit(changeSet.added.concat(changeSet.modified), 5, (changed) =>
               wQ = Q.defer()
               dirname = path.dirname(path.join(@_source, @config.get("client:contentRegion"), added))
               fs.mkdirpSync(dirname)
@@ -150,81 +154,89 @@ class Sync extends events.EventEmitter
               writeStream.on "close", ->
                 wQ.reject()
               rQ = Q.defer()
-              req = request("#{formUrl}#{added}").pipe(writeStream)
+              @logger.info("Start Download '#{formUrl}#{changed}'")
+              @logger.startTime("Download #{changed}")
+              req = request("#{formUrl}#{changed}").pipe(writeStream)
               req.on "end", ->
                 rQ.resolve()
               req.on "close", ->
                 rQ.reject()
-              Q.all([wQ, rQ])
+              Q.all([wQ, rQ]).then ()->
+                @logger.info("Download of #{changed} is DONE. #{@logger.printTime("Download #{changed}")}")
             ),
             async.eachLimit(changeSet.deleted, 5, (deleted) =>
               FS.removeTree path.join(@_source, @config.get("client:contentRegion"), deleted)
             )
           ])
         else
-          @logger.info "content delivery file was found"
-          Q.resolve("content delivery file was found")
+          @logger.info "Content delivery file is found."
+          Q.resolve("Content delivery file is found.")
     .then ()=>
+        @logger.info("SYNC-HTTP is DONE. #{@logger.printTime("SYNC-HTTP")}")
         @syncLocal(command)
 
 
   syncLocal: (command)->
-    #TODO: excluded files
     deferred = Q.defer()
+    @logger.info "Start LOCAL-SYNC. Rsync from '#{@_source}' to '#{@_dest}'."
+    @logger.startTime("LOCAL-SYNC")
     Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
     .then ()=>
         if not @_flags.stopContentDelivery
           @_rsync.source(path.join(@_source, @config.get("client:contentRegion") + "/")).destination(@_dest)
           @_rsync.execute (err, resultCode) =>
             if err then deferred.reject(err)
-            result = if resultCode is 0 then "success" else "fail"
-            @logger.info """LOCAL RSYNC result:\n'#{result}';
-                  local sync from '#{@_source}' to '#{@_dest}';
-                  """
+            result = if resultCode is 0 then "SUCCESS" else "FAIL"
+            @logger.info "LOCAL-SYNC result: '#{result}'. #{@logger.printTime("LOCAL-SYNC")}"
             deferred.resolve(result)
         else
-          @logger.info "content delivery file was found"
-          deferred.resolve "content delivery file was found"
+          @logger.info "Content delivery file is found."
+          deferred.resolve "Content delivery file is found."
     deferred.promise
 
   _logChanges: (result, key) ->
     if @_lastKey isnt key
-      @logger.info ("#{if key? then "as #{key} was found => " else ""}#{result}")
+      @logger.info ("#{if key? then "#{key} is found. " else ""}#{result}")
       @_lastKey = key
 
-  startAutoSync: ()->
+  startAutoSync: () ->
+    @logger.info "Start AUTO-SYNC"
     @intervalId = setInterval () =>
       @_syncAuto()
     , 10000 if not @intervalId?
 
-  stopAutoSync: ()->
+  stopAutoSync: () ->
+    @logger.info "Stop AUTO-SYNC"
     if @intervalId?
       clearInterval @intervalId
       delete @intervalId
 
-  syncReset: ()->
+  syncReset: () ->
     deferred = Q.defer()
+    @logger.startTime("SYNC-RESET started.")
+    @logger.startTime("SYNC-RESET")
     @pushCommand(name: "sync-backup")
     .then (result) =>
-        setTimeout ()=>
-          @pushCommand(name: "sync-backup").then (result)=>
+        setTimeout () =>
+          @pushCommand(name: "sync-backup").then (result) =>
+            @logger.info("SYNC-RESET is DONE. #{@logger.printTime("SYNC-RESET")}")
             deferred.resolve(result)
         , 10000
     deferred.promise
 
-  _syncAuto: ()->
-    @updateFlagIndicators().then ()=>
+  _syncAuto: () ->
+    @updateFlagIndicators().then () =>
       if @_flags.stopContentDelivery
-        @_logChanges('content delivery stopped', 'stopContentDelivery')
+        @_logChanges('Content delivery stopped.', 'stopContentDelivery')
       else
         if @_lastKey is "stopContentDelivery"
-          @_logChanges('content delivery restarted')
+          @_logChanges('Content delivery restarted.')
           @syncReset()
         else if @_flags.stopPeriodicRsync is on
-          @_logChanges('periodic local syncstopped', 'stopPeriodicRsync')
+          @_logChanges('Periodic LOCAL-SYNC stopped.', 'stopPeriodicRsync')
         else
-          @_logChanges('periodic local sync started')
+          @_logChanges('Periodic LOCAL-SYNC started.')
           @pushCommand(name: "sync-local")
 
 
-module.exports = Sync
+  module.exports = Sync

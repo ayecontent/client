@@ -6,11 +6,11 @@ querystring = require "querystring"
 events = require "events"
 errors = require "./../errors"
 socketIO = require "socket.io-client"
-EventHubConnector = require "./../connector"
+util = require "util"
+EventHubConnector = require "./../eventhub-connector"
 
 class Socket extends EventHubConnector
 
-  #TODO: fix listeners bug
   _RECONNECT_MIN_DELAY: 1000
   _RECONNECT_MAX_DELAY: 10000
 
@@ -20,36 +20,38 @@ class Socket extends EventHubConnector
     @_clientId = @config.get("client:id")
     @_signature = @config.get("client:sign")
 
-  configure: () ->
+  initListeners: () ->
     @_socket.on "connect", () =>
+      @logger.info("Client '#{@_clientId}' connected to EVENT-HUB. #{@logger.printTime "Connection to EVENT-HUB"}")
       @_delay = @_RECONNECT_MIN_DELAY
-      @logger.info("client '#{@_clientId}' has connected to eventhub socket")
-      @emit "connected", {clientId: @_clientId}
 
     @_socket.on "message", (message, callback) =>
-      @logger.info "received socket COMMAND '#{message.command.name}'"
-
-      @emit "command", message.command, (err, result)=>
+      @logger.info "Received EVENT-HUB message: '#{util.inspect(message, { depth: 30 })}'"
+      @logger.startTime "Message '#{message.id}' in client"
+      @emit "command", message.command, (err, result) =>
+        @logger.info @logger.printTime "Message '#{message.id}' in client"
         err = errors.stringifyError(err) if err?
         callback(err, result)
 
     @_socket.on "disconnect", =>
-      @logger.info("client '#{@_clientId}' has disconnected to eventhub socket")
+      @logger.info("Client '#{@_clientId}' disconnected from EVENT-HUB")
       @reconnect()
 
     @_socket.on "error", (err) =>
-      @logger.error "Socket connection error:\n'#{err}'"
+      @logger.error "EVENT-HUB connection error: '#{err}'"
       @reconnect()
 
   start: () ->
+    @logger.info "Start Socket EVENT-HUB Connector"
     client = @config.get("client")
     query = querystring.stringify(client)
+    @logger.info "Start connection to EVENT-HUB"
+    @logger.startTime "Connection to EVENT-HUB"
     @_socket = socketIO.connect @_connectString, {
       reconnect: false,
       query: query
     } #handling reconnection manually
-    @configure()
-    @emit "start"
+    @initListeners()
 
   reconnect: () ->
     @_socket.socket.disconnect()
@@ -57,7 +59,8 @@ class Socket extends EventHubConnector
     @_delay = if @_delay < @_RECONNECT_MAX_DELAY then @_delay else @_RECONNECT_MAX_DELAY
 
     setTimeout(=>
-      @logger.info "reconnect invoked"
+      @logger.info "Start reconnection to EVENT-HUB"
+      @logger.startTime "Connection to EVENT-HUB"
       @_socket.socket.connect()
     , @_delay)
     @_delay *= 2

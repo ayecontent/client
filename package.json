@@ -40,7 +40,7 @@
     "lodash": "~2.4.1",
     "socket.io-client": "~0.9.16",
     "fs-extra": "~0.8.1",
-    "winston": "https://github.com/yottagroup/winston/tarball/7ca886169c3143f9fe76f147fdbe2d8af5464dc3",
+    "winston": "https://github.com/yottagroup/winston/tarball/91f183f2d4bf92592f87fdeecce0eb0a18f5fd44",
     "nconf": "~0.6.9",
     "moment": "~2.5.1",
     "request": "~2.33.0",

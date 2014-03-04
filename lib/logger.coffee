@@ -7,9 +7,10 @@ moment = require "moment"
 
 timestamp = () ->
   moment(new Date).format "YYYY-MM-DD HH:mm:ss,SSS"
-  #2014-01-02 01:53:41,274
+#2014-01-02 01:53:41,274
 
 class Logger extends winston.Logger
+  time: {}
   constructor: () ->
     logFolder = path.resolve(__dirname, "../log")
     fs.mkdirpSync(logFolder)
@@ -31,5 +32,10 @@ class Logger extends winston.Logger
     ]
     super {transports: @transports}
 
+  startTime: (command) ->
+    @time[command] = moment().valueOf()
+
+  printTime: (command) ->
+    "#{command} duration: #{moment().valueOf() - @time[command]}ms"
 
 module.exports = Logger

@@ -28,5 +28,5 @@
   "gitCommitterName": "executor",
   "gitCommitterEmail": "executor@ayecm.com",
   "allowRemoteRsync": "false",
-  "profiling": false
+  "execTimeout": 20000
 }

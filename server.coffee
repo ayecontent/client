@@ -1,5 +1,7 @@
 path = require('path')
 startStopDaemon = require('start-stop-daemon')
+Logger = require "./lib/logger"
+logger = new Logger()
 
 daemon = startStopDaemon {
   silent: false,
@@ -9,13 +11,10 @@ daemon = startStopDaemon {
   watchIgnoreDotFiles: true, # whether to ignore dot files
   watchIgnorePatterns: ["#{path.resolve(__dirname, 'log')}/**"],
 # array of glob patterns to ignore, merged with contents of watchDirectory + '/.foreverignore' file
-  logFile: path.resolve(__dirname, 'log/forever.log'), # Path to log output from forever process (when daemonized)
+#  logFile: path.resolve(__dirname, 'log/forever.log'), # Path to log output from forever process (when daemonized)
 #  outFile: 'log/forever.out', # Path to log output from child stdout
   errFile: path.resolve(__dirname, 'log/forever.err')
 }, () ->
-    Logger = require "./lib/logger"
-    logger = new Logger()
-
     logger.info "----------- START -----------"
 
     Application = require "./lib/application"
@@ -29,7 +28,9 @@ daemon = startStopDaemon {
 
 daemon.on "restart", () ->
   process.stdout.write('Restarting at ' + new Date() + '\n');
+  logger.info "----------- ERROR -----------"
 
 daemon.on 'exit', () ->
   process.stdout.write('index.js has exited after max restarts')
+  logger.info "----------- ERROR -----------"
 
