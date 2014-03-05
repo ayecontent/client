@@ -12,9 +12,9 @@ class Application
 
   start: ->
     @initListeners()
+    @eventHubConnector.start()
     @sync.syncReset().then () =>
       @sync.startAutoSync()
-      @eventHubConnector.start()
 
   initListeners: ->
     @eventHubConnector.on "command", (command, callback) =>

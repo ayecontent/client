@@ -27,9 +27,10 @@ class Socket extends EventHubConnector
 
     @_socket.on "message", (message, callback) =>
       @logger.info "Received EVENT-HUB message: '#{util.inspect(message, { depth: 30 })}'"
-      @logger.startTime "Message '#{message.id}' in client"
+      msg = "Finished the processing of the message '#{message.id}'. SYNC-TYPE: '#{message.command.name}'. Processing"
+      @logger.startTime msg
       @emit "command", message.command, (err, result) =>
-        @logger.info @logger.printTime "Message '#{message.id}' in client"
+        @logger.info @logger.printTime msg
         err = errors.stringifyError(err) if err?
         callback(err, result)
 

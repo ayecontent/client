@@ -32,10 +32,10 @@ daemon = startStopDaemon({
 
 daemon.on("restart", function() {
   process.stdout.write('Restarting at ' + new Date() + '\n');
-  return logger.info("----------- ERROR -----------");
+  return logger.info("----------- RESTART -----------");
 });
 
 daemon.on('exit', function() {
   process.stdout.write('index.js has exited after max restarts');
-  return logger.info("----------- ERROR -----------");
+  return logger.info("----------- RESTART -----------");
 });

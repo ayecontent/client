@@ -28,9 +28,9 @@ daemon = startStopDaemon {
 
 daemon.on "restart", () ->
   process.stdout.write('Restarting at ' + new Date() + '\n');
-  logger.info "----------- ERROR -----------"
+  logger.info "----------- RESTART -----------"
 
 daemon.on 'exit', () ->
   process.stdout.write('index.js has exited after max restarts')
-  logger.info "----------- ERROR -----------"
+  logger.info "----------- RESTART -----------"
 

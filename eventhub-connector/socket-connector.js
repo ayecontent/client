@@ -43,12 +43,14 @@ Socket = (function(_super) {
     })(this));
     this._socket.on("message", (function(_this) {
       return function(message, callback) {
+        var msg;
         _this.logger.info("Received EVENT-HUB message: '" + (util.inspect(message, {
           depth: 30
         })) + "'");
-        _this.logger.startTime("Message '" + message.id + "' in client");
+        msg = "Finished the processing of the message '" + message.id + "'. SYNC-TYPE: '" + message.command.name + "'. Processing";
+        _this.logger.startTime(msg);
         return _this.emit("command", message.command, function(err, result) {
-          _this.logger.info(_this.logger.printTime("Message '" + message.id + "' in client"));
+          _this.logger.info(_this.logger.printTime(msg));
           if (err != null) {
             err = errors.stringifyError(err);
           }

@@ -47,15 +47,8 @@ Sync = (function(_super) {
     this._queue = async.queue((function(_this) {
       return function(command) {
         var commandName;
-        _this.logger.startTime("Command " + (util.inspect(command, {
-          depth: 30
-        })) + " processing");
         commandName = _this.COMMANDS[command.name];
-        return _this[commandName](command).then(function() {
-          return _this.logger.info(_this.logger.printTime("Command " + (util.inspect(command, {
-            depth: 30
-          })) + " processing"));
-        });
+        return _this[commandName](command);
       };
     })(this));
   }
@@ -153,24 +146,24 @@ Sync = (function(_super) {
     var deferred;
     deferred = Q.defer();
     this.logger.info("Start GIT CLEAN. Command: '" + (this._wrapGit("git clean -xdf")) + "'");
-    this.logger.startTime("GIT CLEAN");
+    this.logger.startTime("GIT CLEAN command");
     this._execGit("git clean -xdf", (function(_this) {
       return function(err, stdout, stderr) {
-        _this.logger.info("GIT CLEAN result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT CLEAN")));
+        _this.logger.info("GIT CLEAN result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT CLEAN command")));
         if (err !== null) {
           return deferred.reject(err);
         }
         _this.logger.info("Start GIT RESET. Command: '" + (_this._wrapGit("git reset --hard origin/master")) + "'");
-        _this.logger.startTime("GIT RESET");
+        _this.logger.startTime("GIT RESET command");
         return _this._execGit("git reset --hard origin/master", function(err, stdout, stderr) {
-          _this.logger.info("GIT RESET result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT RESET")));
+          _this.logger.info("GIT RESET result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT RESET command")));
           if (err !== null) {
             return deferred.reject(err);
           }
           _this.logger.info("Start GIT PULL. Command: '" + (_this._wrapGit("git pull --ff")) + "'");
-          _this.logger.startTime("GIT PULL");
+          _this.logger.startTime("GIT PULL command");
           return _this._execGit("git pull --ff", function(err, stdout, stderr) {
-            _this.logger.info("GIT PULL result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT PULL")));
+            _this.logger.info("GIT PULL result: " + (stdout !== "" ? stdout : stderr) + (_this.logger.printTime("GIT PULL command")));
             if (err !== null) {
               return deferred.reject(err);
             }
@@ -183,6 +176,8 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.syncGit = function(command) {
+    this.logger.info("Start SYNC-GIT.");
+    this.logger.startTime("SYNC-GIT command");
     return Q.all([Sync.initFolders(this._source, this._dest), this.updateFlagIndicators()]).then((function(_this) {
       return function() {
         if (!_this._flags.stopContentDelivery) {
@@ -200,7 +195,8 @@ Sync = (function(_super) {
             }
           }).then(function(result) {
             if (result === "SUCCESS") {
-              return _this.syncLocal(command);
+              _this.syncLocal(command);
+              return _this.logger.info(_this.logger.printTime("SYNC-GIT command"));
             } else {
               return Q.reject("FAIL");
             }
@@ -215,7 +211,7 @@ Sync = (function(_super) {
 
   Sync.prototype.syncHttp = function(command) {
     this.logger.info("Start SYNC-HTTP.");
-    this.logger.startTime("SYNC-HTTP");
+    this.logger.startTime("SYNC-HTTP command");
     return Q.all([Sync.initFolders(this._source, this._dest), this.updateFlagIndicators()]).then((function(_this) {
       return function() {
         var changeSet, formUrl;
@@ -231,29 +227,34 @@ Sync = (function(_super) {
             async.eachLimit(changeSet.added.concat(changeSet.modified), 5, function(changed) {
               var dirname, rQ, req, wQ, writeStream;
               wQ = Q.defer();
-              dirname = path.dirname(path.join(_this._source, _this.config.get("client:contentRegion"), added));
+              _this.logger.info("Start Download '" + formUrl + changed + "'");
+              _this.logger.startTime("Download '" + changed + "'");
+              dirname = path.dirname(path.join(_this._source, _this.config.get("client:contentRegion"), changed));
               fs.mkdirpSync(dirname);
-              writeStream = fs.createWriteStream(path.join(_this._source, _this.config.get("client:contentRegion"), added));
+              writeStream = fs.createWriteStream(path.join(_this._source, _this.config.get("client:contentRegion"), changed));
               writeStream.on("finish", function() {
+                _this.logger.info("Finish writing stream for " + changed);
                 return wQ.resolve();
               });
               writeStream.on("close", function() {
-                return wQ.reject();
+                _this.logger.info("Close writing stream for " + changed);
+                return wQ.resolve();
               });
               rQ = Q.defer();
-              _this.logger.info("Start Download '" + formUrl + changed + "'");
-              _this.logger.startTime("Download " + changed);
               req = request("" + formUrl + changed).pipe(writeStream);
               req.on("end", function() {
+                _this.logger.info("End download stream for " + changed);
                 return rQ.resolve();
               });
               req.on("close", function() {
+                _this.logger.info("Close download stream for " + changed);
                 return rQ.reject();
               });
               return Q.all([wQ, rQ]).then(function() {
-                return this.logger.info("Download of " + changed + " is DONE. " + (this.logger.printTime("Download " + changed)));
+                return _this.logger.info("Download of " + changed + " is DONE. " + (_this.logger.printTime("Download '" + changed + "'")));
               });
             }), async.eachLimit(changeSet.deleted, 5, function(deleted) {
+              _this.logger.info("Delete '" + (path.join(_this._source, _this.config.get("client:contentRegion"), deleted)) + "'");
               return FS.removeTree(path.join(_this._source, _this.config.get("client:contentRegion"), deleted));
             })
           ]);
@@ -264,7 +265,7 @@ Sync = (function(_super) {
       };
     })(this)).then((function(_this) {
       return function() {
-        _this.logger.info("SYNC-HTTP is DONE. " + (_this.logger.printTime("SYNC-HTTP")));
+        _this.logger.info("SYNC-HTTP is DONE. " + (_this.logger.printTime("SYNC-HTTP command")));
         return _this.syncLocal(command);
       };
     })(this));
@@ -274,7 +275,7 @@ Sync = (function(_super) {
     var deferred;
     deferred = Q.defer();
     this.logger.info("Start LOCAL-SYNC. Rsync from '" + this._source + "' to '" + this._dest + "'.");
-    this.logger.startTime("LOCAL-SYNC");
+    this.logger.startTime("LOCAL-SYNC command");
     Q.all([Sync.initFolders(this._source, this._dest), this.updateFlagIndicators()]).then((function(_this) {
       return function() {
         if (!_this._flags.stopContentDelivery) {
@@ -285,7 +286,7 @@ Sync = (function(_super) {
               deferred.reject(err);
             }
             result = resultCode === 0 ? "SUCCESS" : "FAIL";
-            _this.logger.info("LOCAL-SYNC result: '" + result + "'. " + (_this.logger.printTime("LOCAL-SYNC")));
+            _this.logger.info("LOCAL-SYNC result: '" + result + "'. " + (_this.logger.printTime("LOCAL-SYNC command")));
             return deferred.resolve(result);
           });
         } else {
@@ -326,8 +327,8 @@ Sync = (function(_super) {
   Sync.prototype.syncReset = function() {
     var deferred;
     deferred = Q.defer();
-    this.logger.startTime("SYNC-RESET started.");
-    this.logger.startTime("SYNC-RESET");
+    this.logger.info("SYNC-RESET started.");
+    this.logger.startTime("SYNC-RESET command");
     this.pushCommand({
       name: "sync-backup"
     }).then((function(_this) {
@@ -336,7 +337,7 @@ Sync = (function(_super) {
           return _this.pushCommand({
             name: "sync-backup"
           }).then(function(result) {
-            _this.logger.info("SYNC-RESET is DONE. " + (_this.logger.printTime("SYNC-RESET")));
+            _this.logger.info("SYNC-RESET is DONE. " + (_this.logger.printTime("SYNC-RESET command")));
             return deferred.resolve(result);
           });
         }, 10000);

@@ -36,10 +36,8 @@ class Sync extends events.EventEmitter
     .exclude(@config.get("syncIgnore"))
 
     @_queue = async.queue (command) =>
-      @logger.startTime ("Command #{util.inspect(command, {depth: 30})} processing")
       commandName = @COMMANDS[command.name]
-      @[commandName](command).then ()=>
-        @logger.info @logger.printTime ("Command #{util.inspect(command, {depth: 30})} processing")
+      @[commandName](command)
 
   @initFolders: () ->
     args = Array.prototype.slice.call(arguments, 0)
@@ -95,24 +93,26 @@ class Sync extends events.EventEmitter
   _pullRepository: () ->
     deferred = Q.defer()
     @logger.info "Start GIT CLEAN. Command: '#{@_wrapGit "git clean -xdf"}'"
-    @logger.startTime("GIT CLEAN")
+    @logger.startTime("GIT CLEAN command")
     @_execGit "git clean -xdf", (err, stdout, stderr) =>
-      @logger.info "GIT CLEAN result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT CLEAN")}"
+      @logger.info "GIT CLEAN result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT CLEAN command")}"
       if err isnt null then return deferred.reject(err)
       @logger.info "Start GIT RESET. Command: '#{@_wrapGit "git reset --hard origin/master"}'"
-      @logger.startTime("GIT RESET")
+      @logger.startTime("GIT RESET command")
       @_execGit "git reset --hard origin/master", (err, stdout, stderr) =>
-        @logger.info "GIT RESET result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT RESET")}"
+        @logger.info "GIT RESET result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT RESET command")}"
         if err isnt null then return deferred.reject(err)
         @logger.info "Start GIT PULL. Command: '#{@_wrapGit "git pull --ff"}'"
-        @logger.startTime("GIT PULL")
+        @logger.startTime("GIT PULL command")
         @_execGit "git pull --ff", (err, stdout, stderr) =>
-          @logger.info "GIT PULL result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT PULL")}"
+          @logger.info "GIT PULL result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT PULL command")}"
           if err isnt null then return deferred.reject(err)
           deferred.resolve("SUCCESS")
     deferred.promise
 
   syncGit: (command)->
+    @logger.info "Start SYNC-GIT."
+    @logger.startTime("SYNC-GIT command")
     Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
     .then () =>
         if not @_flags.stopContentDelivery
@@ -124,7 +124,9 @@ class Sync extends events.EventEmitter
               if result is "SUCCESS" then @_pullRepository()
               else Q.reject("FAIL")
           .then (result) =>
-              if result is "SUCCESS" then @syncLocal(command)
+              if result is "SUCCESS"
+                @syncLocal(command)
+                @logger.info @logger.printTime("SYNC-GIT command")
               else Q.reject("FAIL")
         else
           @logger.info "Content delivery file was found."
@@ -132,7 +134,7 @@ class Sync extends events.EventEmitter
 
   syncHttp: (command)->
     @logger.info "Start SYNC-HTTP."
-    @logger.startTime("SYNC-HTTP")
+    @logger.startTime("SYNC-HTTP command")
     Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
     .then ()=>
         if not @_flags.stopContentDelivery
@@ -146,25 +148,30 @@ class Sync extends events.EventEmitter
           Q.all([
             async.eachLimit(changeSet.added.concat(changeSet.modified), 5, (changed) =>
               wQ = Q.defer()
-              dirname = path.dirname(path.join(@_source, @config.get("client:contentRegion"), added))
-              fs.mkdirpSync(dirname)
-              writeStream = fs.createWriteStream(path.join(@_source, @config.get("client:contentRegion"), added))
-              writeStream.on "finish", ->
-                wQ.resolve()
-              writeStream.on "close", ->
-                wQ.reject()
-              rQ = Q.defer()
               @logger.info("Start Download '#{formUrl}#{changed}'")
-              @logger.startTime("Download #{changed}")
+              @logger.startTime("Download '#{changed}'")
+              dirname = path.dirname(path.join(@_source, @config.get("client:contentRegion"), changed))
+              fs.mkdirpSync(dirname)
+              writeStream = fs.createWriteStream(path.join(@_source, @config.get("client:contentRegion"), changed))
+              writeStream.on "finish", =>
+                @logger.info("Finish writing stream for #{changed}")
+                wQ.resolve()
+              writeStream.on "close", =>
+                @logger.info("Close writing stream for #{changed}")
+                wQ.resolve()
+              rQ = Q.defer()
               req = request("#{formUrl}#{changed}").pipe(writeStream)
-              req.on "end", ->
+              req.on "end", =>
+                @logger.info("End download stream for #{changed}")
                 rQ.resolve()
-              req.on "close", ->
+              req.on "close", =>
+                @logger.info("Close download stream for #{changed}")
                 rQ.reject()
-              Q.all([wQ, rQ]).then ()->
-                @logger.info("Download of #{changed} is DONE. #{@logger.printTime("Download #{changed}")}")
+              Q.all([wQ, rQ]).then ()=>
+                @logger.info("Download of #{changed} is DONE. #{@logger.printTime("Download '#{changed}'")}")
             ),
             async.eachLimit(changeSet.deleted, 5, (deleted) =>
+              @logger.info("Delete '#{path.join(@_source, @config.get("client:contentRegion"), deleted)}'")
               FS.removeTree path.join(@_source, @config.get("client:contentRegion"), deleted)
             )
           ])
@@ -172,14 +179,14 @@ class Sync extends events.EventEmitter
           @logger.info "Content delivery file is found."
           Q.resolve("Content delivery file is found.")
     .then ()=>
-        @logger.info("SYNC-HTTP is DONE. #{@logger.printTime("SYNC-HTTP")}")
+        @logger.info("SYNC-HTTP is DONE. #{@logger.printTime("SYNC-HTTP command")}")
         @syncLocal(command)
 
 
   syncLocal: (command)->
     deferred = Q.defer()
     @logger.info "Start LOCAL-SYNC. Rsync from '#{@_source}' to '#{@_dest}'."
-    @logger.startTime("LOCAL-SYNC")
+    @logger.startTime("LOCAL-SYNC command")
     Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
     .then ()=>
         if not @_flags.stopContentDelivery
@@ -187,7 +194,7 @@ class Sync extends events.EventEmitter
           @_rsync.execute (err, resultCode) =>
             if err then deferred.reject(err)
             result = if resultCode is 0 then "SUCCESS" else "FAIL"
-            @logger.info "LOCAL-SYNC result: '#{result}'. #{@logger.printTime("LOCAL-SYNC")}"
+            @logger.info "LOCAL-SYNC result: '#{result}'. #{@logger.printTime("LOCAL-SYNC command")}"
             deferred.resolve(result)
         else
           @logger.info "Content delivery file is found."
@@ -213,13 +220,13 @@ class Sync extends events.EventEmitter
 
   syncReset: () ->
     deferred = Q.defer()
-    @logger.startTime("SYNC-RESET started.")
-    @logger.startTime("SYNC-RESET")
+    @logger.info("SYNC-RESET started.")
+    @logger.startTime("SYNC-RESET command")
     @pushCommand(name: "sync-backup")
     .then (result) =>
         setTimeout () =>
           @pushCommand(name: "sync-backup").then (result) =>
-            @logger.info("SYNC-RESET is DONE. #{@logger.printTime("SYNC-RESET")}")
+            @logger.info("SYNC-RESET is DONE. #{@logger.printTime("SYNC-RESET command")}")
             deferred.resolve(result)
         , 10000
     deferred.promise
