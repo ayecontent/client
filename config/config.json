@@ -1,11 +1,11 @@
 {
   "eventhub": {
-    "address": "172.31.1.1",
+    "address": "localhost",
     "port": "9005"
   },
   "folder": {
-    "backup": "/home/ec2-user/backup/",
-    "dest": "/var/opt/client/"
+    "backup": "/code/ayecm/test/backup/",
+    "dest": "/code/ayecm/test/dest/"
   },
   "indicator": {
     "stopContentDelivery": ".stop-content-delivery",
@@ -17,12 +17,12 @@
   },
   "syncIgnore": [".git*", ".stop-content-delivery", ".stop-periodic-sync", ".start-content-delivery", ".DS_Store"],
   "client": {
-    "sign": "u40TnjEynYaEjSUD6x2Dnjm9A1w=",
     "id": "demo3.ayecm.com",
     "contentRegion": "working",
     "hostId": "272cb6b0-ab03-4443-aa47-088ccb5f0175",
     "customerId": "test_customer_id"
   },
+  "secret": "bmyuFAkmIfmK0lhUhdZ50h6MN4I=",
   "gitUser": "Jesse-James",
   "gitPassword": "qwe123QWE",
   "gitCommitterName": "executor",

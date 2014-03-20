@@ -32,10 +32,10 @@ class Logger extends winston.Logger
     ]
     super {transports: @transports}
 
-  startTime: (command) ->
+  time: (command) ->
     @time[command] = moment().valueOf()
 
-  printTime: (command) ->
+  timeEnd: (command) ->
     "#{command} duration: #{moment().valueOf() - @time[command]}ms"
 
 module.exports = Logger

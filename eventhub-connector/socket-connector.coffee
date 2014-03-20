@@ -1,8 +1,8 @@
 "use strict"
 
 _ = require "lodash"
-crypto = require "crypto"
 querystring = require "querystring"
+jwt = require "jsonwebtoken"
 events = require "events"
 errors = require "./../errors"
 socketIO = require "socket.io-client"
@@ -22,16 +22,17 @@ class Socket extends EventHubConnector
 
   initListeners: () ->
     @_socket.on "connect", () =>
-      @logger.info("Client '#{@_clientId}' connected to EVENT-HUB. #{@logger.printTime "Connection to EVENT-HUB"}")
+      @logger.info("Client '#{@_clientId}' connected to EVENT-HUB. #{@logger.timeEnd "Connection to EVENT-HUB"}")
       @_delay = @_RECONNECT_MIN_DELAY
 
     @_socket.on "message", (message, callback) =>
       @logger.info "Received EVENT-HUB message: '#{util.inspect(message, { depth: 30 })}'"
-      msg = "Finished the processing of the message '#{message.id}'. SYNC-TYPE: '#{message.command.name}'. Processing"
-      @logger.startTime msg
+      msg = "Finished processing of message '#{message.id}'. SYNC-TYPE: '#{message.command.name}'. Processing"
+      @logger.time msg
       @emit "command", message.command, (err, result) =>
-        @logger.info @logger.printTime msg
+        @logger.info @logger.timeEnd msg
         err = errors.stringifyError(err) if err?
+        @logger.info "Sending message id '#{message.id}' callback to the eventhub. Callback: '#{util.inspect {err: err, result: result}, {depth: 30}}'"
         callback(err, result)
 
     @_socket.on "disconnect", =>
@@ -45,9 +46,10 @@ class Socket extends EventHubConnector
   start: () ->
     @logger.info "Start Socket EVENT-HUB Connector"
     client = @config.get("client")
-    query = querystring.stringify(client)
+    token = jwt.sign({client: client}, @config.get("secret"), { expiresInMinutes: 60 * 5 });
+    query = querystring.stringify({token: token, id: client.id})
     @logger.info "Start connection to EVENT-HUB"
-    @logger.startTime "Connection to EVENT-HUB"
+    @logger.time "Connection to EVENT-HUB"
     @_socket = socketIO.connect @_connectString, {
       reconnect: false,
       query: query
@@ -61,7 +63,7 @@ class Socket extends EventHubConnector
 
     setTimeout(=>
       @logger.info "Start reconnection to EVENT-HUB"
-      @logger.startTime "Connection to EVENT-HUB"
+      @logger.time "Connection to EVENT-HUB"
       @_socket.socket.connect()
     , @_delay)
     @_delay *= 2

@@ -1,10 +1,8 @@
 "use strict"
 
-FS = require "q-io/fs"
 fs = require "fs-extra"
 
-async = require "async-q"
-Q = require "q"
+async = require "async"
 
 path = require "path"
 exec = require('child_process').exec
@@ -28,61 +26,56 @@ class Sync extends events.EventEmitter
     @_dest = @config.get "folder:dest"
     @_flags = {}
     @_gitUrl = @config.get "git:url"
-    @_gitDir = path.join(@_source, '.git')
+    @_gitDir = path.join @_source, '.git'
 
-    @_rsync = new Rsync({debug: true})
-    .flags('avz')
-    .set('delete')
-    .exclude(@config.get("syncIgnore"))
+    @_rsync = new Rsync({debug: true}).flags("avz").set("delete").exclude(@config.get("syncIgnore"))
 
-    @_queue = async.queue (command) =>
+    @_queue = async.queue (command, callback) =>
       commandName = @COMMANDS[command.name]
-      @[commandName](command)
+      @[commandName](command, callback)
 
-  @initFolders: () ->
-    args = Array.prototype.slice.call(arguments, 0)
-    async.each(args, (file)->
-      FS.makeTree file
-    )
+  @initFolders: (folders, callback) ->
+    async.each folders
+    , (folder, callback) ->
+      fs.mkdirp folder, callback
+    , (err) ->
+      return callback(err)
 
-  updateFlagIndicators: ->
-    indicators = @config.get("indicator")
+
+  updateFlagIndicators: (callback)->
+    indicators = @config.get "indicator"
     flags = (flag for flag of indicators)
-    async.each(flags, (flag) =>
-      FS.exists(path.join(@_dest, indicators[flag]))
-      .then((result)=>
-          @_flags[flag] = result
-        )
-    )
+    async.each flags
+    , (flag, callback) =>
+      fs.exists path.join(@_dest, indicators[flag]), (exists) =>
+        @_flags[flag] = exists
+        return callback()
+    , (err) ->
+      return callback(err)
 
-  pushCommand: (command) ->
-    @logger.startTime ("Command #{util.inspect(command, {depth: 30})} in queue")
-    @_queue.push(command)
+  pushCommand: (command, callback) ->
+    @logger.time ("Command #{util.inspect(command, {depth: 30})} in queue")
+    @_queue.push(command, callback)
 
-  _checkRepositoryStatus: () ->
-    @logger.info "Start GIT status of '#{@_source}'. Command: '#{@_wrapGit "git status"}'"
-    deferred = Q.defer()
-    @logger.startTime("GIT STATUS")
+  _checkRepositoryStatus: (callback) ->
+    @logger.info "Check GIT status of '#{@_source}'. Command: '#{@_wrapGit "git status"}'"
+    @logger.time("GIT STATUS command")
     @_execGit "git status", (err, stdout, stderr) =>
-      @logger.info "GIT STATUS result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT STATUS")}"
-      if stderr isnt "" then deferred.resolve("NOT_GIT")
-      else deferred.resolve("GIT")
-    deferred.promise
+      @logger.info "GIT STATUS command result: '#{if stdout isnt "" then stdout else stderr}'. #{@logger.timeEnd("GIT STATUS command")}"
+      if stderr isnt "" then return callback(null, "GIT STATUS: NOT_GIT")
+      else return callback(null, "GIT STATUS: GIT")
 
-  _cloneRepository: () ->
-    deferred = Q.defer()
+  _cloneRepository: (callback) ->
     @logger.info "Cleaning backup directory '#{@_source}'"
-    FS.removeTree(@_source)
-    .then ()=>
-        FS.makeTree(@_source)
-    .then ()=>
-        @logger.info "Start GIT CLONE. Clone '#{@_gitUrl}' into '#{@_source}'. Command: '#{@_wrapGit("git clone #{@_gitUrl} #{@_source}")}'"
-        @logger.startTime("GIT CLONE")
+    fs.rmrf @_source, (err) =>
+      if err isnt null then return callback(err)
+      fs.mkdirp @_source, (err) =>
+        @logger.info "Start GIT CLONE command. Clone '#{@_gitUrl}' into '#{@_source}'. Command: '#{@_wrapGit("git clone #{@_gitUrl} #{@_source}")}'"
+        @logger.time("GIT CLONE command")
         @_execGit "git clone #{@_gitUrl} #{@_source}", (err, stdout, stderr) =>
-          @logger.info "GIT CLONE result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT CLONE")}"
-          if err isnt null then deferred.reject(err)
-          else deferred.resolve("SUCCESS")
-    deferred.promise
+          @logger.info "GIT CLONE command result: '#{if stdout isnt "" then stdout else stderr}'. #{@logger.timeEnd("GIT CLONE command")}"
+          if err isnt null then return callback(err)
+          else return callback(null)
 
   _wrapGit: (command) ->
     "GIT_SSH=#{path.join(@config.get("basePath"), @config.get("git:sshShell"))} #{command}"
@@ -90,116 +83,137 @@ class Sync extends events.EventEmitter
   _execGit: (command, callback) ->
     exec @_wrapGit(command), {cwd: @_source, timeout: @config.get("execTimeout")}, callback
 
-  _pullRepository: () ->
-    deferred = Q.defer()
-    @logger.info "Start GIT CLEAN. Command: '#{@_wrapGit "git clean -xdf"}'"
-    @logger.startTime("GIT CLEAN command")
+  _pullRepository: (callback) ->
+    @logger.info "Start GIT CLEAN command. Command: '#{@_wrapGit "git clean -xdf"}'"
+    @logger.time("GIT CLEAN command")
     @_execGit "git clean -xdf", (err, stdout, stderr) =>
-      @logger.info "GIT CLEAN result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT CLEAN command")}"
-      if err isnt null then return deferred.reject(err)
-      @logger.info "Start GIT RESET. Command: '#{@_wrapGit "git reset --hard origin/master"}'"
-      @logger.startTime("GIT RESET command")
+      @logger.info "GIT CLEAN command result: '#{if stdout isnt "" then stdout else stderr}'. #{@logger.timeEnd("GIT CLEAN command")}"
+      if err isnt null then return callback(err)
+      @logger.info "Start GIT RESET command. Command: '#{@_wrapGit "git reset --hard origin/master"}'"
+      @logger.time "GIT RESET command"
       @_execGit "git reset --hard origin/master", (err, stdout, stderr) =>
-        @logger.info "GIT RESET result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT RESET command")}"
-        if err isnt null then return deferred.reject(err)
-        @logger.info "Start GIT PULL. Command: '#{@_wrapGit "git pull --ff"}'"
-        @logger.startTime("GIT PULL command")
+        @logger.info "GIT RESET command result: '#{if stdout isnt "" then stdout else stderr}'. #{@logger.timeEnd("GIT RESET command")}"
+        if err isnt null then return callback(err)
+        @logger.info "Start GIT PULL command. Command: '#{@_wrapGit "git pull --ff"}'"
+        @logger.time "GIT PULL command"
         @_execGit "git pull --ff", (err, stdout, stderr) =>
-          @logger.info "GIT PULL result: #{if stdout isnt "" then stdout else stderr}#{@logger.printTime("GIT PULL command")}"
-          if err isnt null then return deferred.reject(err)
-          deferred.resolve("SUCCESS")
-    deferred.promise
+          @logger.info "GIT PULL command result: '#{if stdout isnt "" then stdout else stderr}'. #{@logger.timeEnd("GIT PULL command")}"
+          if err isnt null then return callback(err)
+          return callback(null, "GIT PULL: SUCCESS")
 
-  syncGit: (command)->
-    @logger.info "Start SYNC-GIT."
-    @logger.startTime("SYNC-GIT command")
-    Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
-    .then () =>
-        if not @_flags.stopContentDelivery
-          @_checkRepositoryStatus()
-          .then (result) =>
-              if result is "NOT_GIT" then @_cloneRepository()
-              else Q.resolve("SUCCESS")
-          .then (result) =>
-              if result is "SUCCESS" then @_pullRepository()
-              else Q.reject("FAIL")
-          .then (result) =>
-              if result is "SUCCESS"
-                @syncLocal(command)
-                @logger.info @logger.printTime("SYNC-GIT command")
-              else Q.reject("FAIL")
-        else
-          @logger.info "Content delivery file was found."
-          Q.resolve("Content delivery file was found.")
+  syncGit: (command, callback) ->
+    @logger.info "Start SYNC-GIT command."
+    @logger.time("SYNC-GIT command")
+    async.parallel [
+        (callback) =>
+          Sync.initFolders([@_source, @_dest], callback)
+      , @updateFlagIndicators.bind(@) ]
+    , (err) =>
+      if err isnt null then return callback(err)
+      if not @_flags.stopContentDelivery
+        async.series [
+            (callback)=>
+              @_checkRepositoryStatus (err, result) =>
+                if err isnt null then return callback(err)
+                if result is "GIT STATUS: NOT_GIT" then @_cloneRepository(callback)
+                else return callback(null, result)
+          , @_pullRepository.bind(@)
+          , (callback) =>
+              @syncLocal(command, callback)
+          ]
+        , (err, result) =>
+          @logger.info @logger.timeEnd("SYNC-GIT command")
+          callback(err, result)
+      else
+        @logger.info "Content delivery file was found."
+        callback(null, "Content delivery file was found.")
 
-  syncHttp: (command)->
-    @logger.info "Start SYNC-HTTP."
-    @logger.startTime("SYNC-HTTP command")
-    Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
-    .then ()=>
-        if not @_flags.stopContentDelivery
-          formUrl = "http://#{command.host}:#{command.port}"
-          formUrl += "/#{@config.get("client:customerId")}"
-          formUrl += "/#{@config.get("client:hostId")}"
-          formUrl += "/#{@config.get("client:contentRegion")}"
-          formUrl += "/#{command.snapshot.id}"
-          @logger.info "Constructed SYNC-HTTP fetch url: '#{formUrl}'"
-          changeSet = command.snapshot.changeSet
-          Q.all([
-            async.eachLimit(changeSet.added.concat(changeSet.modified), 5, (changed) =>
-              wQ = Q.defer()
+  syncHttp: (command, callback)->
+    @logger.info "Start SYNC-HTTP command."
+    @logger.time("SYNC-HTTP command")
+    async.parallel [
+        (callback) =>
+          Sync.initFolders([@_source, @_dest], callback)
+      , @updateFlagIndicators.bind(@)
+      ]
+    , (err) =>
+      if err isnt null then return callback(err)
+      if not @_flags.stopContentDelivery
+        formUrl = "http://#{command.host}:#{command.port}"
+        formUrl += "/#{@config.get("client:customerId")}"
+        formUrl += "/#{@config.get("client:hostId")}"
+        formUrl += "/#{@config.get("client:contentRegion")}"
+        formUrl += "/#{command.snapshot.id}"
+        changeSet = command.snapshot.changeSet
+        async.parallel [
+            async.eachLimit changeSet.added, 5, (added, callback) =>
+              @logger.info("Start Download '#{formUrl}#{added}'")
+              @logger.time("Download '#{added}'")
+              dirname = path.dirname(path.join(@_source, @config.get("client:contentRegion"), added))
+              fs.mkdirp dirname, ()=>
+                writeStream = fs.createWriteStream(path.join(@_source, @config.get("client:contentRegion"), added))
+                req = request("#{formUrl}#{added}").pipe(writeStream)
+                possibleError = null
+                req.on 'error', (err) =>
+                  possibleError = err
+                req.on 'end', () =>
+                  if possibleError isnt null
+                    fs.rmrf path.join(@_source, @config.get("client:contentRegion"), added), (err) =>
+                      if err isnt null then callback(err)
+                      else return callback(possibleError)
+                  else
+                    @logger.info("Download of #{added} is DONE. #{@logger.timeEnd("Download '#{added}'")}")
+                    callback(null, "DOWNLOAD of '#{added}': SUCCESS")
+          , async.eachLimit changeSet.modified, 5, (changed, callback) =>
               @logger.info("Start Download '#{formUrl}#{changed}'")
-              @logger.startTime("Download '#{changed}'")
+              @logger.time("Download '#{changed}'")
               dirname = path.dirname(path.join(@_source, @config.get("client:contentRegion"), changed))
-              fs.mkdirpSync(dirname)
-              writeStream = fs.createWriteStream(path.join(@_source, @config.get("client:contentRegion"), changed))
-              writeStream.on "finish", =>
-                @logger.info("Finish writing stream for #{changed}")
-                wQ.resolve()
-              writeStream.on "close", =>
-                @logger.info("Close writing stream for #{changed}")
-                wQ.resolve()
-              rQ = Q.defer()
-              req = request("#{formUrl}#{changed}").pipe(writeStream)
-              req.on "end", =>
-                @logger.info("End download stream for #{changed}")
-                rQ.resolve()
-              req.on "close", =>
-                @logger.info("Close download stream for #{changed}")
-                rQ.reject()
-              Q.all([wQ, rQ]).then ()=>
-                @logger.info("Download of #{changed} is DONE. #{@logger.printTime("Download '#{changed}'")}")
-            ),
-            async.eachLimit(changeSet.deleted, 5, (deleted) =>
-              @logger.info("Delete '#{path.join(@_source, @config.get("client:contentRegion"), deleted)}'")
-              FS.removeTree path.join(@_source, @config.get("client:contentRegion"), deleted)
-            )
-          ])
-        else
-          @logger.info "Content delivery file is found."
-          Q.resolve("Content delivery file is found.")
-    .then ()=>
-        @logger.info("SYNC-HTTP is DONE. #{@logger.printTime("SYNC-HTTP command")}")
-        @syncLocal(command)
+              fs.mkdirp dirname, ()=>
+                writeStream = fs.createWriteStream(path.join(@_source, @config.get("client:contentRegion"), changed))
+                req = request("#{formUrl}#{changed}").pipe(writeStream)
+                possibleError = null
+                req.on 'error', (err) =>
+                  possibleError = err
+                req.on 'end', ()=>
+                  if possibleError isnt null
+                    fs.rmrf path.join(@_source, @config.get("client:contentRegion"), changed), (err) =>
+                      if err isnt null then callback(err)
+                      else return callback(possibleError)
+                  else
+                    @logger.info("Download of #{changed} is DONE. #{@logger.timeEnd("Download '#{changed}'")}")
+                    callback(null, "DOWNLOAD of '#{changed}': SUCCESS")
+            , async.eachLimit changeSet.deleted, 5, (deleted, callback) =>
+                @logger.info("Delete '#{path.join(@_source, @config.get("client:contentRegion"), deleted)}'")
+                fs.rmrf path.join(@_source, @config.get("client:contentRegion"), deleted), (err) =>
+                  callback(err, "DELETION of '#{deleted}': SUCCESS")
+          ]
+        , (err) =>
+          if err isnt null then return callback(err)
+          @logger.info("SYNC-HTTP command is DONE. #{@logger.timeEnd("SYNC-HTTP command")}")
+          @syncLocal(command, callback)
+      else
+        @logger.info "Content delivery file is found."
+        callback(null, "Content delivery file is found.")
 
-
-  syncLocal: (command)->
-    deferred = Q.defer()
-    @logger.info "Start LOCAL-SYNC. Rsync from '#{@_source}' to '#{@_dest}'."
-    @logger.startTime("LOCAL-SYNC command")
-    Q.all([Sync.initFolders(@_source, @_dest), @updateFlagIndicators()])
-    .then ()=>
-        if not @_flags.stopContentDelivery
-          @_rsync.source(path.join(@_source, @config.get("client:contentRegion") + "/")).destination(@_dest)
-          @_rsync.execute (err, resultCode) =>
-            if err then deferred.reject(err)
-            result = if resultCode is 0 then "SUCCESS" else "FAIL"
-            @logger.info "LOCAL-SYNC result: '#{result}'. #{@logger.printTime("LOCAL-SYNC command")}"
-            deferred.resolve(result)
-        else
-          @logger.info "Content delivery file is found."
-          deferred.resolve "Content delivery file is found."
-    deferred.promise
+  syncLocal: (command, callback)->
+    @logger.info "Start LOCAL-SYNC command. Rsync from '#{@_source}' to '#{@_dest}'."
+    @logger.time("LOCAL-SYNC command")
+    async.parallel [
+        (callback) =>
+          Sync.initFolders([@_source, @_dest], callback)
+      , @updateFlagIndicators.bind(@)
+      ]
+    , (err) =>
+      if err isnt null then return callback(err)
+      if not @_flags.stopContentDelivery
+        @_rsync.source(path.join(@_source, @config.get("client:contentRegion") + "/")).destination(@_dest)
+        @_rsync.execute (err, resultCode) =>
+          if err isnt null then return callback(err, resultCode)
+          @logger.info "LOCAL-SYNC command resultCode: '#{resultCode}'. #{@logger.timeEnd("LOCAL-SYNC command")}"
+          callback(null, "LOCAL-SYNC: SUCCESS")
+      else
+        @logger.info "Content delivery file is found."
+        callback(null, "Content delivery file is found.")
 
   _logChanges: (result, key) ->
     if @_lastKey isnt key
@@ -207,33 +221,33 @@ class Sync extends events.EventEmitter
       @_lastKey = key
 
   startAutoSync: () ->
-    @logger.info "Start AUTO-SYNC"
+    @logger.info "Start AUTO-SYNC process"
     @intervalId = setInterval () =>
       @_syncAuto()
     , 10000 if not @intervalId?
 
   stopAutoSync: () ->
-    @logger.info "Stop AUTO-SYNC"
+    @logger.info "Stop AUTO-SYNC process"
     if @intervalId?
       clearInterval @intervalId
       delete @intervalId
 
-  syncReset: () ->
-    deferred = Q.defer()
-    @logger.info("SYNC-RESET started.")
-    @logger.startTime("SYNC-RESET command")
-    @pushCommand(name: "sync-backup")
-    .then (result) =>
-        setTimeout () =>
-          @pushCommand(name: "sync-backup").then (result) =>
-            @logger.info("SYNC-RESET is DONE. #{@logger.printTime("SYNC-RESET command")}")
-            deferred.resolve(result)
-        , 10000
-    deferred.promise
+  syncReset: (callback) ->
+    @logger.info("SYNC-RESET command started.")
+    @logger.time("SYNC-RESET command")
+    @pushCommand {name: "sync-backup"}, (err) =>
+      if err isnt null then return callback(err)
+      setTimeout () =>
+        @pushCommand {name: "sync-backup"}, (err) =>
+          if err isnt null then return callback(err)
+          @logger.info("SYNC-RESET command is DONE. #{@logger.timeEnd("SYNC-RESET command")}")
+          callback(null, "SYNC-REST: SUCCESS")
+      , 10000
 
   _syncAuto: () ->
-    @updateFlagIndicators().then () =>
-      if @_flags.stopContentDelivery
+    @updateFlagIndicators (err) =>
+      if err isnt null then return @logger.error util.inspect err, {depth: 30}
+      else if @_flags.stopContentDelivery
         @_logChanges('Content delivery stopped.', 'stopContentDelivery')
       else
         if @_lastKey is "stopContentDelivery"
@@ -243,7 +257,8 @@ class Sync extends events.EventEmitter
           @_logChanges('Periodic LOCAL-SYNC stopped.', 'stopPeriodicRsync')
         else
           @_logChanges('Periodic LOCAL-SYNC started.')
-          @pushCommand(name: "sync-local")
+          @pushCommand {name: "sync-local"}, (err) =>
+            if err isnt null then return @logger.error util.inspect err, {depth: 30}
 
 
   module.exports = Sync
