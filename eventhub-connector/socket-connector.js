@@ -101,6 +101,7 @@ Socket = (function(_super) {
   };
 
   Socket.prototype.reconnect = function() {
+    this.emit("reconnect");
     this._socket.socket.disconnect();
     if (this._delay == null) {
       this._delay = this._RECONNECT_MIN_DELAY;

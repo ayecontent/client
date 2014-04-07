@@ -57,11 +57,12 @@ class Socket extends EventHubConnector
     @initListeners()
 
   reconnect: () ->
+    @emit "reconnect"
     @_socket.socket.disconnect()
     @_delay ?= @_RECONNECT_MIN_DELAY
     @_delay = if @_delay < @_RECONNECT_MAX_DELAY then @_delay else @_RECONNECT_MAX_DELAY
 
-    setTimeout(=>
+    setTimeout( =>
       @logger.info "Start reconnection to EVENT-HUB"
       @logger.time "Connection to EVENT-HUB"
       @_socket.socket.connect()
