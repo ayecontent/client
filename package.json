@@ -3,7 +3,7 @@
     "name": "Vladimir Stolyarov <phoerix@gmail.com>",
     "email": "phoerix@gmail.com"
   },
-  "name": "ayecm client",
+  "name": "ayecm-client",
   "version": "0.8.0",
   "main": "client.js",
   "description": "Client application for ayecm.com service",
