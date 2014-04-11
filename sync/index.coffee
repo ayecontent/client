@@ -119,7 +119,7 @@ class Sync extends events.EventEmitter
           else return callback(null)
 
   _wrapGit: (command) ->
-    "GIT_SSH=#{path.join(@config.get("basePath"), @config.get("git:sshShell"))} #{command}"
+    "GIT_SSH=#{path.join(@config.get("basepath"), @config.get("git:sshShell"))} #{command}"
 
   _execGit: (command, callback) ->
     exec (if @config.get("git:sync") is "ssh" then @_wrapGit(command) else command), {cwd: @_source, timeout: @config.get("execTimeout")}, callback

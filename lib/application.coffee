@@ -15,7 +15,7 @@ class Application
   replaceBasePath: (source, dest)->
     dest?=source
     fs.readFile "#{source}.template", 'utf8', (err, data) =>
-      result = data.replace(/%CLIENT_PATH%/g, @config.get('basePath'))
+      result = data.replace(/%CLIENT_PATH%/g, @config.get('basepath'))
       .replace(/%KEY_NAME%/g, @config.get('git:keyName'))
       fs.writeFile "#{dest}", result, 'utf8'
 
