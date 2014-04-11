@@ -27,7 +27,7 @@ class Sync extends events.EventEmitter
 
   constructor: (args)->
     {@config, @logger} = args
-    @_source = path.join(@config.get("basepath"), "backup")
+    @_source = @config.get "folder:backup"
     @_dest = @config.get "folder:dest"
     @_flags = {}
     @_switchURLattempts = 0
