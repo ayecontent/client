@@ -20,10 +20,14 @@ class Sync extends events.EventEmitter
     "sync-backup": "syncGit"
     "sync-local": "syncLocal"
     "sync-reset": "syncReset"
+  FILES:
+    stopContentDelivery: '.stop-content-delivery'
+    stopPeriodicSync: '.stop-periodic-sync'
+    startContentDelivery: '.start-content-delivery'
 
   constructor: (args)->
     {@config, @logger} = args
-    @_source = @config.get "folder:backup"
+    @_source = path.join(@config.get("basepath"), "backup")
     @_dest = @config.get "folder:dest"
     @_flags = {}
     @_switchURLattempts = 0
@@ -57,11 +61,10 @@ class Sync extends events.EventEmitter
       callback(err)
 
   updateFlagIndicators: (callback)->
-    indicators = @config.get "indicator"
-    flags = (flag for flag of indicators)
+    flags = (flag for flag of @FILES)
     async.each flags
     , (flag, callback) =>
-      fs.exists path.join(@_dest, indicators[flag]), (exists) =>
+      fs.exists path.join(@_dest, @FILES[flag]), (exists) =>
         @_flags[flag] = exists
         return callback()
     , (err) ->

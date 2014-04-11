@@ -32,9 +32,15 @@ Sync = (function(_super) {
     "sync-reset": "syncReset"
   };
 
+  Sync.prototype.FILES = {
+    stopContentDelivery: '.stop-content-delivery',
+    stopPeriodicSync: '.stop-periodic-sync',
+    startContentDelivery: '.start-content-delivery'
+  };
+
   function Sync(args) {
     this.config = args.config, this.logger = args.logger;
-    this._source = this.config.get("folder:backup");
+    this._source = path.join(this.config.get("basepath"), "backup");
     this._dest = this.config.get("folder:dest");
     this._flags = {};
     this._switchURLattempts = 0;
@@ -86,19 +92,18 @@ Sync = (function(_super) {
   };
 
   Sync.prototype.updateFlagIndicators = function(callback) {
-    var flag, flags, indicators;
-    indicators = this.config.get("indicator");
+    var flag, flags;
     flags = (function() {
       var _results;
       _results = [];
-      for (flag in indicators) {
+      for (flag in this.FILES) {
         _results.push(flag);
       }
       return _results;
-    })();
+    }).call(this);
     return async.each(flags, (function(_this) {
       return function(flag, callback) {
-        return fs.exists(path.join(_this._dest, indicators[flag]), function(exists) {
+        return fs.exists(path.join(_this._dest, _this.FILES[flag]), function(exists) {
           _this._flags[flag] = exists;
           return callback();
         });
