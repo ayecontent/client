@@ -9,8 +9,11 @@
   "description": "Client application for ayecm.com service",
   "homepage": "http://ayecm.com/",
   "scripts": {
-    "start": "node server.js start",
-    "install": "node server.js stop && node server.js start"
+    "start": "node client.js start"
+  },
+  "bin": {
+    "start": "./bin/start",
+    "stop": "./bin/stop"
   },
   "repository": "git://github.com/ayecontent/client",
   "devDependencies": {

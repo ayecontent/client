@@ -17,7 +17,7 @@ daemon = startStopDaemon {
   Application = require "./lib/application"
 
   config.file {file: path.join __dirname, "./config/config.json"}
-  config.set "basePath", __dirname
+  config.set "basepath", __dirname
 
   config.save () =>
     application = new Application ("logger": logger, "config": config)

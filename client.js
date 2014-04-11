@@ -27,7 +27,7 @@ daemon = startStopDaemon({
   config.file({
     file: path.join(__dirname, "./config/config.json")
   });
-  config.set("basePath", __dirname);
+  config.set("basepath", __dirname);
   return config.save((function(_this) {
     return function() {
       var application;
