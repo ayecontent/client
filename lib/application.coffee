@@ -5,6 +5,7 @@ Sync = require "./../sync"
 util = require "util"
 fs = require "fs"
 exec = require('child_process').exec
+path = require "path"
 
 class Application
   constructor: (args) ->
@@ -14,10 +15,10 @@ class Application
 
   replaceBasePath: (source, dest)->
     dest?=source
-    fs.readFile "#{source}.template", 'utf8', (err, data) =>
+    fs.readFile path.join(@config.get('basepath'),"#{source}.template"), 'utf8', (err, data) =>
       result = data.replace(/%CLIENT_PATH%/g, @config.get('basepath'))
       .replace(/%KEY_NAME%/g, @config.get('git:keyName'))
-      fs.writeFile "#{dest}", result, 'utf8'
+      fs.writeFile path.join(@config.get('basepath'),"#{dest}"), result, 'utf8'
 
 #  npmUpdate: ()->
 #    exec "npm install", {cwd: @_source}, (err, stdout, stderr) =>
