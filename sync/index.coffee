@@ -20,6 +20,7 @@ class Sync extends events.EventEmitter
     "sync-backup": "syncGit"
     "sync-local": "syncLocal"
     "sync-reset": "syncReset"
+
   FILES:
     stopContentDelivery: '.stop-content-delivery'
     stopPeriodicSync: '.stop-periodic-sync'
@@ -27,7 +28,7 @@ class Sync extends events.EventEmitter
 
   constructor: (args)->
     {@config, @logger} = args
-    @_source = @config.get "folder:backup"
+    @_source = if @config.get("folder:backup")? then @config.get "folder:backup" else path.join @config.get("basepath"), '/backup'
     @_dest = @config.get "folder:dest"
     @_flags = {}
     @_switchURLattempts = 0

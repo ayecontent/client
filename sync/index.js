@@ -40,7 +40,7 @@ Sync = (function(_super) {
 
   function Sync(args) {
     this.config = args.config, this.logger = args.logger;
-    this._source = this.config.get("folder:backup");
+    this._source = this.config.get("folder:backup") != null ? this.config.get("folder:backup") : path.join(this.config.get("basepath"), '/backup');
     this._dest = this.config.get("folder:dest");
     this._flags = {};
     this._switchURLattempts = 0;
