@@ -140,7 +140,7 @@ class Sync extends events.EventEmitter
         @logger.time "GIT PULL command"
         @_execGit "git pull --ff", (err, stdout, stderr) =>
           @logger.info "GIT PULL command result: '#{if stdout isnt "" then stdout else stderr}'. #{@logger.timeEnd("GIT PULL command")}"
-          if stderr isnt ""
+          if err isnt null
             if @_switchURLattempts < 1
               @_switchURL (err) =>
                 if err? then return callback(err)

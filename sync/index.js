@@ -213,7 +213,7 @@ Sync = (function(_super) {
           _this.logger.time("GIT PULL command");
           return _this._execGit("git pull --ff", function(err, stdout, stderr) {
             _this.logger.info("GIT PULL command result: '" + (stdout !== "" ? stdout : stderr) + "'. " + (_this.logger.timeEnd("GIT PULL command")));
-            if (stderr !== "") {
+            if (err !== null) {
               if (_this._switchURLattempts < 1) {
                 return _this._switchURL(function(err) {
                   if (err != null) {
