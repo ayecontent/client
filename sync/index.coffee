@@ -29,7 +29,7 @@ class Sync extends events.EventEmitter
   constructor: (args)->
     {@config, @logger} = args
     @_source = if @config.get("folder:backup")? then @config.get "folder:backup" else path.join @config.get("basepath"), '/backup'
-    @_dest = @config.get "folder:dest"
+    @_dest = if  @config.get("folder:dest")? then config.get "folder:dest" else path.join @config.get("basepath"), '/dest'
     @_flags = {}
     @_switchURLattempts = 0
     @_gitDir = path.join @_source, '.git'
@@ -39,9 +39,11 @@ class Sync extends events.EventEmitter
       commandName = @COMMANDS[command.name]
       @[commandName](command, callback)
 
-  @initFolders: (folders, callback) ->
+  _initFolders: (folders, callback) ->
+    logger = @logger
     async.each folders
     , (folder, callback) ->
+      logger.info "initialize folder: #{folder}"
       fs.mkdirp folder, callback
     , (err) ->
       return callback(err)
@@ -154,9 +156,10 @@ class Sync extends events.EventEmitter
   syncGit: (command, callback) ->
     @logger.info "Start SYNC-GIT command."
     @logger.time("SYNC-GIT command")
+    that = @
     async.parallel [
         (callback) =>
-          Sync.initFolders([@_source, @_dest], callback)
+          that._initFolders([@_source, @_dest], callback)
       , @updateFlagIndicators.bind(@) ]
     , (err) =>
       if err? then return callback(err)
