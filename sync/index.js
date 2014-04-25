@@ -281,7 +281,7 @@
       this.logger.time("SYNC-HTTP command");
       return async.parallel([
         function(callback) {
-          return Sync.initFolders([_this._source, _this._dest], callback);
+          return _this._initFolders([_this._source, _this._dest], callback);
         }, this.updateFlagIndicators.bind(this)
       ], function(err) {
         var changeSet, formUrl;
@@ -355,7 +355,7 @@
       this.logger.time("LOCAL-SYNC command");
       return async.parallel([
         function(callback) {
-          return Sync.initFolders([_this._source, _this._dest], callback);
+          return _this._initFolders([_this._source, _this._dest], callback);
         }, this.updateFlagIndicators.bind(this)
       ], function(err) {
         if (err != null) {

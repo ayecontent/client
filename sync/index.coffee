@@ -187,7 +187,7 @@ class Sync extends events.EventEmitter
     @logger.time("SYNC-HTTP command")
     async.parallel [
         (callback) =>
-          Sync.initFolders([@_source, @_dest], callback)
+          @_initFolders([@_source, @_dest], callback)
       , @updateFlagIndicators.bind(@)
       ]
     , (err) =>
@@ -249,7 +249,7 @@ class Sync extends events.EventEmitter
     @logger.time("LOCAL-SYNC command")
     async.parallel [
         (callback) =>
-          Sync.initFolders([@_source, @_dest], callback)
+          @_initFolders([@_source, @_dest], callback)
       , @updateFlagIndicators.bind(@)
       ]
     , (err) =>
