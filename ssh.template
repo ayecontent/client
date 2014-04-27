@@ -1,7 +1,8 @@
 Host bitbucket.org
-ControlPath %CLIENT_PATH%/config/ssh-%r@%h:%p
-ControlMaster auto
-HostName bitbucket.org
-PreferredAuthentications publickey
-IdentityFile %CLIENT_PATH%/config/%KEY_NAME%
-
+  ControlPath %CLIENT_PATH%/config/ssh-%r@%h:%p
+  ControlMaster auto
+  HostName bitbucket.org
+  PreferredAuthentications publickey
+  IdentityFile %CLIENT_PATH%/config/%KEY_NAME%
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
