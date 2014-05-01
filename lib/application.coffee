@@ -28,7 +28,6 @@ class Application
 
   start: ->
     @replaceBasePath('ssh-shell')
-    @replaceBasePath('ssh', 'config/ssh')
     @initListeners()
     @eventHubConnector.start()
     @sync.syncReset (err) =>
