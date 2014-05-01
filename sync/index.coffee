@@ -29,7 +29,7 @@ class Sync extends events.EventEmitter
   constructor: (args)->
     {@config, @logger} = args
     @_source = if @config.get("folder:backup")? then @config.get "folder:backup" else path.join @config.get("basepath"), '/backup'
-    @_dest = if  @config.get("folder:dest")? then config.get "folder:dest" else path.join @config.get("basepath"), '/dest'
+    @_dest = if @config.get("folder:dest")? then config.get "folder:dest" else path.join @config.get("basepath"), '/dest'
     @_flags = {}
     @_switchURLattempts = 0
     @_gitDir = path.join @_source, '.git'
@@ -40,10 +40,9 @@ class Sync extends events.EventEmitter
       @[commandName](command, callback)
 
   _initFolders: (folders, callback) ->
-    logger = @logger
     async.each folders
-    , (folder, callback) ->
-      logger.info "initialize folder: #{folder}"
+    , (folder, callback) =>
+      @logger.info "initialize folder: #{folder}"
       fs.mkdirp folder, callback
     , (err) ->
       return callback(err)
@@ -74,7 +73,7 @@ class Sync extends events.EventEmitter
       return callback(err)
 
   pushCommand: (command, callback) ->
-    @logger.time ("Command #{util.inspect(command, {depth: 30})} in queue")
+    @logger.time("Command #{util.inspect(command, depth: 30)} in queue")
     @_queue.push(command, callback)
 
 #  _testRepository: (callback) ->
@@ -148,7 +147,7 @@ class Sync extends events.EventEmitter
                 if err? then return callback(err)
                 @_pullRepository callback
             else
-              @config.set "git:disabled", true
+              @config.set("git:disabled", true)
               return callback(null, "GIT PULL: FAIL. SYNC-GIT was disabled")
           else
             return callback(null, "GIT PULL: SUCCESS")
@@ -156,14 +155,12 @@ class Sync extends events.EventEmitter
   syncGit: (command, callback) ->
     @logger.info "Start SYNC-GIT command."
     @logger.time("SYNC-GIT command")
-    that = @
-    async.parallel [
-        (callback) =>
-          that._initFolders([@_source, @_dest], callback)
-      , @updateFlagIndicators.bind(@) ]
+    async.parallel [(callback) =>
+        @_initFolders([@_source, @_dest], callback)
+      , @updateFlagIndicators.bind(@)]
     , (err) =>
       if err? then return callback(err)
-      if not (@_flags.stopContentDelivery or @config.get "git:disabled")
+      if not (@_flags.stopContentDelivery or @config.get("git:disabled"))
         async.series [
             (callback)=>
               @_checkRepositoryStatus (err, result) =>
@@ -193,7 +190,6 @@ class Sync extends events.EventEmitter
     , (err) =>
       if err? then return callback(err)
       if not @_flags.stopContentDelivery
-        command.host = '54.200.235.215'
         formUrl = "http://#{command.host}:#{command.port}"
         #        formUrl += "/#{@config.get("client:customerId")}"
         #        formUrl += "/#{@config.get("client:hostId")}"
@@ -284,7 +280,7 @@ class Sync extends events.EventEmitter
   syncReset: (callback) ->
     @logger.info("SYNC-RESET command started.")
     @logger.time("SYNC-RESET command")
-#    @logger.info "Tasks in queue to be reset: #{@_queue.tasks.length}"
+    #    @logger.info "Tasks in queue to be reset: #{@_queue.tasks.length}"
     @_queue.tasks.length = 0
     @pushCommand {name: "sync-backup"}, (err) =>
       if err? then return callback?(err)
