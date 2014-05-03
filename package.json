@@ -4,7 +4,7 @@
     "email": "phoerix@gmail.com"
   },
   "name": "ayecm-client",
-  "version": "0.8.9",
+  "version": "0.8.10",
   "main": "client.js",
   "description": "Client application for ayecm.com service",
   "homepage": "http://ayecm.com/",
