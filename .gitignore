@@ -1,14 +1,14 @@
 # Idea
 *.iml
-/.idea
+.idea
 
 # Config
-/config/*
+config/*
 
 # Logs
 logs
 *.log
-/log/*
+log/*
 
 # Runtime data
 pids
