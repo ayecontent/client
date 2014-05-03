@@ -1,6 +1,6 @@
 "use strict"
 
-Socket = require "./../eventhub-connector/socket-connector"
+SocketConnector = require "./../eventhub-connector/socket-connector"
 Sync = require "./../sync"
 util = require "util"
 fs = require "fs"
@@ -10,7 +10,7 @@ path = require "path"
 class Application
   constructor: (args) ->
     {@logger, @config} = args
-    @eventHubConnector = new Socket(logger: @logger, config: @config)
+    @eventHubConnector = new SocketConnector(logger: @logger, config: @config)
     @sync = new Sync(logger: @logger, config: @config)
 
   replaceBasePath: (source, dest)->
