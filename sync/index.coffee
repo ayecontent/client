@@ -29,7 +29,7 @@ class Sync extends events.EventEmitter
   constructor: (args)->
     {@config, @logger} = args
     @_source = if @config.get("folder:backup")? then @config.get "folder:backup" else path.join @config.get("basepath"), '/backup'
-    @_dest = if @config.get("folder:dest")? then config.get "folder:dest" else path.join @config.get("basepath"), '/dest'
+    @_dest = if @config.get("folder:dest")? then @config.get "folder:dest" else path.join @config.get("basepath"), '/dest'
     @_flags = {}
     @_switchURLattempts = 0
     @_gitDir = path.join @_source, '.git'
@@ -76,18 +76,6 @@ class Sync extends events.EventEmitter
     @logger.time("Command #{util.inspect(command, depth: 30)} in queue")
     @_queue.push(command, callback)
 
-#  _testRepository: (callback) ->
-#    @logger.info "Check GIT ls-remote of '#{@_source}'. Command: '#{@_wrapGit "git ls-remote -h origin HEAD"}'"
-#    @logger.time("GIT LS-REMOTE command")
-#    @_syncRepositoryType (err) =>
-#      if err? then return callback(err)
-#      @_execGit "git ls-remote -h origin HEAD", (err, stdout, stderr) =>
-#        @logger.info "GIT LS-REMOTE command result: '#{if stdout isnt "" then stdout else stderr}'. #{@logger.timeEnd("GIT LS-REMOTE command")}"
-#        if stderr isnt ""
-#          @_switchURL callback
-#        else
-#          callback(err)
-
   _syncRepositoryType: (callback) ->
     exec "git config --get remote.origin.url", {cwd: @_source, timeout: @config.get("execTimeout")}, (err, stdout, stderr) =>
       repositorySync = if (/^http/i).test(stdout) then "http" else "ssh"
@@ -121,7 +109,7 @@ class Sync extends events.EventEmitter
           else return callback(null)
 
   _wrapGit: (command) ->
-    "GIT_SSH=#{path.join(@config.get("basepath"), @config.get("git:sshShell"))} #{command}"
+    "set GIT_SSH=#{path.join(@config.get("basepath"), @config.get("git:sshShell"))} & #{command}"
 
   _execGit: (command, callback) ->
     exec (if @config.get("git:sync") is "ssh" then @_wrapGit(command) else command), {cwd: @_source, timeout: @config.get("execTimeout")}, callback
