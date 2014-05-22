@@ -1,0 +1,2 @@
+#!/bin/sh
+exec ssh -o "ControlMaster=auto" -o "PreferredAuthentications=publickey" -i "/Users/phoerix/code/ayecm/client/config/demo_id" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" "$@"
