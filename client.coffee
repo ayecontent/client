@@ -31,4 +31,3 @@ daemon.on "restart", () ->
 daemon.on 'exit', () ->
   process.stdout.write('index.js has exited after max restarts')
   logger.info "----------- RESTART -----------"
-

@@ -32,7 +32,7 @@ class Socket extends EventHubConnector
       @emit "command", message.command, (err, result) =>
         @logger.info @logger.timeEnd msg
         err = errors.stringifyError(err) if err?
-        @logger.info "Sending message id '#{message.id}' callback to the eventhub. Callback: '#{util.inspect({err: err, result: result}, {depth: 30})}'"
+        @logger.info "Sending message id '#{message.id}' callback to the eventhub. Callback: '#{util.inspect {err: err, result: result}, {depth: 30}}'"
         callback(err, result)
 
     @_socket.on "disconnect", =>

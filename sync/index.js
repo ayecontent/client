@@ -41,7 +41,7 @@ Sync = (function(_super) {
   function Sync(args) {
     this.config = args.config, this.logger = args.logger;
     this._source = this.config.get("folder:backup") != null ? this.config.get("folder:backup") : path.join(this.config.get("basepath"), '/backup');
-    this._dest = this.config.get("folder:dest") != null ? config.get("folder:dest") : path.join(this.config.get("basepath"), '/dest');
+    this._dest = this.config.get("folder:dest") != null ? this.config.get("folder:dest") : path.join(this.config.get("basepath"), '/dest');
     this._flags = {};
     this._switchURLattempts = 0;
     this._gitDir = path.join(this._source, '.git');
@@ -186,7 +186,7 @@ Sync = (function(_super) {
   };
 
   Sync.prototype._wrapGit = function(command) {
-    return "GIT_SSH=" + (path.join(this.config.get("basepath"), this.config.get("git:sshShell"))) + " " + command;
+    return "set GIT_SSH=" + (path.join(this.config.get("basepath"), this.config.get("git:sshShell"))) + " & " + command;
   };
 
   Sync.prototype._execGit = function(command, callback) {
