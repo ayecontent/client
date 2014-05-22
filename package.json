@@ -30,9 +30,8 @@
     "rsync": "https://bitbucket.org/ayecm/node-rsync/get/master.tar.gz",
     "async": "~0.2.10",
     "stack-trace": "0.0.9",
-    "socket.io": "~0.9.16",
     "lodash": "~2.4.1",
-    "socket.io-client": "0.9.x",
+    "socket.io-client": "https://github.com/LearnBoost/socket.io-client/tarball/master",
     "fs-extra": "~0.8.1",
     "winston": "https://bitbucket.org/ayecm/winston/get/master.tar.gz",
     "nconf": "~0.6.9",
@@ -41,7 +40,7 @@
     "jsonwebtoken": "^0.1.0"
   },
   "engines": {
-    "node": ">= 0.8.0"
+    "node": ">= 0.10.0"
   },
   "license": "MIT"
 }

@@ -26,22 +26,20 @@ class Socket extends EventHubConnector
       @_delay = @_RECONNECT_MIN_DELAY
 
     @_socket.on "message", (message, callback) =>
-      @logger.info "Received EVENT-HUB message: '#{util.inspect(message, { depth: 30 })}'"
+      @logger.info "Received EVENT-HUB message: '#{util.inspect(message)}'"
       msg = "Finished processing of message '#{message.id}'. SYNC-TYPE: '#{message.command.name}'. Processing"
       @logger.time msg
       @emit "command", message.command, (err, result) =>
         @logger.info @logger.timeEnd msg
         err = errors.stringifyError(err) if err?
-        @logger.info "Sending message id '#{message.id}' callback to the eventhub. Callback: '#{util.inspect {err: err, result: result}, {depth: 30}}'"
+        @logger.info "Sending message id '#{message.id}' callback to the eventhub. Callback: '#{util.inspect(err: err, result: result)}'"
         callback(err, result)
 
     @_socket.on "disconnect", =>
       @logger.info("Client '#{@_clientId}' disconnected from EVENT-HUB")
-      @reconnect()
 
     @_socket.on "error", (err) =>
       @logger.error "EVENT-HUB connection error: '#{err}'"
-      @reconnect()
 
   start: () ->
     @logger.info "Start Socket EVENT-HUB Connector"
@@ -51,22 +49,8 @@ class Socket extends EventHubConnector
     @logger.info "Start connection to EVENT-HUB"
     @logger.time "Connection to EVENT-HUB"
     @_socket = socketIO.connect @_connectString, {
-      reconnect: false,
       query: query
-    } #handling reconnection manually
+    }
     @initListeners()
-
-  reconnect: () ->
-    @emit "reconnect"
-    @_socket.socket.disconnect()
-    @_delay ?= @_RECONNECT_MIN_DELAY
-    @_delay = if @_delay < @_RECONNECT_MAX_DELAY then @_delay else @_RECONNECT_MAX_DELAY
-
-    setTimeout( =>
-      @logger.info "Start reconnection to EVENT-HUB"
-      @logger.time "Connection to EVENT-HUB"
-      @_socket.socket.connect()
-    , @_delay)
-    @_delay *= 2
 
 module.exports = Socket

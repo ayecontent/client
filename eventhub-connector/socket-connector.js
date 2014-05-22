@@ -44,9 +44,7 @@ Socket = (function(_super) {
     this._socket.on("message", (function(_this) {
       return function(message, callback) {
         var msg;
-        _this.logger.info("Received EVENT-HUB message: '" + (util.inspect(message, {
-          depth: 30
-        })) + "'");
+        _this.logger.info("Received EVENT-HUB message: '" + (util.inspect(message)) + "'");
         msg = "Finished processing of message '" + message.id + "'. SYNC-TYPE: '" + message.command.name + "'. Processing";
         _this.logger.time(msg);
         return _this.emit("command", message.command, function(err, result) {
@@ -57,8 +55,6 @@ Socket = (function(_super) {
           _this.logger.info("Sending message id '" + message.id + "' callback to the eventhub. Callback: '" + (util.inspect({
             err: err,
             result: result
-          }, {
-            depth: 30
           })) + "'");
           return callback(err, result);
         });
@@ -66,14 +62,12 @@ Socket = (function(_super) {
     })(this));
     this._socket.on("disconnect", (function(_this) {
       return function() {
-        _this.logger.info("Client '" + _this._clientId + "' disconnected from EVENT-HUB");
-        return _this.reconnect();
+        return _this.logger.info("Client '" + _this._clientId + "' disconnected from EVENT-HUB");
       };
     })(this));
     return this._socket.on("error", (function(_this) {
       return function(err) {
-        _this.logger.error("EVENT-HUB connection error: '" + err + "'");
-        return _this.reconnect();
+        return _this.logger.error("EVENT-HUB connection error: '" + err + "'");
       };
     })(this));
   };
@@ -94,27 +88,9 @@ Socket = (function(_super) {
     this.logger.info("Start connection to EVENT-HUB");
     this.logger.time("Connection to EVENT-HUB");
     this._socket = socketIO.connect(this._connectString, {
-      reconnect: false,
       query: query
     });
     return this.initListeners();
-  };
-
-  Socket.prototype.reconnect = function() {
-    this.emit("reconnect");
-    this._socket.socket.disconnect();
-    if (this._delay == null) {
-      this._delay = this._RECONNECT_MIN_DELAY;
-    }
-    this._delay = this._delay < this._RECONNECT_MAX_DELAY ? this._delay : this._RECONNECT_MAX_DELAY;
-    setTimeout((function(_this) {
-      return function() {
-        _this.logger.info("Start reconnection to EVENT-HUB");
-        _this.logger.time("Connection to EVENT-HUB");
-        return _this._socket.socket.connect();
-      };
-    })(this), this._delay);
-    return this._delay *= 2;
   };
 
   return Socket;
