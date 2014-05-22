@@ -1,0 +1,47 @@
+{
+  "author": {
+    "name": "Vladimir Stolyarov <phoerix@gmail.com>",
+    "email": "phoerix@gmail.com"
+  },
+  "name": "ayecm-client",
+  "version": "0.8.11",
+  "main": "client.js",
+  "description": "Client application for ayecm.com service",
+  "homepage": "http://ayecm.com/",
+  "scripts": {
+    "start": "node client.js start"
+  },
+  "bin": {
+    "start": "./bin/start",
+    "stop": "./bin/stop"
+  },
+  "repository": "git://github.com/ayecontent/client",
+  "devDependencies": {
+    "grunt-contrib-jshint": "~0.9.2",
+    "grunt-contrib-nodeunit": "~0.3.3",
+    "grunt-contrib-watch": "~0.6.0",
+    "load-grunt-tasks": "~0.4.0",
+    "time-grunt": "~0.2.10",
+    "jshint-stylish": "~0.1.5",
+    "longjohn": "~0.2.2",
+    "expect.js": "~0.3.1"
+  },
+  "dependencies": {
+    "rsync": "https://bitbucket.org/ayecm/node-rsync/get/master.tar.gz",
+    "async": "~0.2.10",
+    "stack-trace": "0.0.9",
+    "socket.io": "https://github.com/LearnBoost/socket.io/tarball/master",
+    "lodash": "~2.4.1",
+    "socket.io-client": "https://github.com/LearnBoost/socket.io-client/tarball/master",
+    "fs-extra": "~0.8.1",
+    "winston": "https://bitbucket.org/ayecm/winston/get/master.tar.gz",
+    "nconf": "~0.6.9",
+    "moment": "~2.5.1",
+    "start-stop-daemon": "~0.1.0",
+    "jsonwebtoken": "^0.1.0"
+  },
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "license": "MIT"
+}

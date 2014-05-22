@@ -1,0 +1,2 @@
+#!/bin/sh
+exec ssh -o "ControlMaster=auto" -o "PreferredAuthentications=publickey" -i "%CLIENT_PATH%/config/%KEY_NAME%" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" "$@"
