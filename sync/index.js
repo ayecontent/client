@@ -186,7 +186,11 @@ Sync = (function(_super) {
   };
 
   Sync.prototype._wrapGit = function(command) {
-    return "set GIT_SSH=" + (path.join(this.config.get("basepath"), this.config.get("git:sshShell"))) + " & " + command;
+    if (process.platform === 'win32') {
+      return "set GIT_SSH=" + (path.join(this.config.get("basepath"), this.config.get("git:sshShell"))) + " & " + command;
+    } else {
+      return "GIT_SSH=" + (path.join(this.config.get("basepath"), this.config.get("git:sshShell"))) + " " + command;
+    }
   };
 
   Sync.prototype._execGit = function(command, callback) {
